@@ -1,7 +1,9 @@
 
 .column {
-  width: 400px;
-  border-right: 2px solid green;
+  width: auto;
+  padding: 15px;
+  border-right: 2px dotted green;
+  float: left;
 }
 
 .column input {
@@ -11,5 +13,4 @@
 
 .column table {
   float: left;
-  clear: none;
 }

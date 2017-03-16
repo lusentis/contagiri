@@ -33,23 +33,25 @@ export default function column({
   bibs
 }) {
   const handleAddBib = e => {
-    if (e.nativeEvent.keyCode !== 13) {
+    if (e.nativeEvent.keyCode &&
+        e.nativeEvent.keyCode !== 13) {
       return;
     }
     const bib = Number(e.target.value);
     e.target.value = '';
     onAddBib(bib);
   }
-  const handleChangeBib = index => e => {
-    const nextBib = Number(e.target.value);
-    onChangeBib(index, nextBib);
-  }
-  const laps = computeLaps(bibs);
+  // const handleChangeBib = index => e => {
+  //   // inconsistent behaviour, do not use
+  //   // const nextBib = Number(e.target.value);
+  //   // onChangeBib(index, nextBib);
+  // }
+  const laps = bibs ? computeLaps(bibs) : [[]];
   return (
     <div className="column">
       <h3>Categoria: {category}</h3>
       {laps.map((lap, lapNum0) => {
-        if (lap.length === 0) {
+        if (lapNum0 !== 0 && lap.length === 0) {
           return false;
         }
         return (
@@ -61,13 +63,30 @@ export default function column({
             </thead>
             <tbody>
               {lap.map((bib, index) => (
-                <tr key={index}>
-                  <td><input type="number" defaultValue={bib} onKeyDown={handleChangeBib(index)} /></td>
+                <tr key={bib}>
+                  <td>
+                    <input
+                      type="number"
+                      defaultValue={bib}
+                      readOnly
+                      // onKeyDown={handleChangeBib(index)}
+                      // onBlur={handleChangeBib(index)}
+                    />
+                  </td>
                 </tr>
               ))}
-              <tr>
-                <td><input type="number" defaultValue="" onKeyDown={handleAddBib} /></td>
-              </tr>
+              {lapNum0 === 0 &&
+                <tr>
+                  <td>
+                    <input
+                      type="number"
+                      defaultValue=""
+                      onKeyDown={handleAddBib}
+                      onBlur={handleAddBib}
+                    />
+                  </td>
+                </tr>
+              }
             </tbody>
           </table>
         );
