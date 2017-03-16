@@ -1,0 +1,15 @@
+
+.column {
+  width: 400px;
+  border-right: 2px solid green;
+}
+
+.column input {
+  width: 40px;
+  text-align: center;
+}
+
+.column table {
+  float: left;
+  clear: none;
+}
