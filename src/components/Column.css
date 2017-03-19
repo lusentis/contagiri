@@ -3,14 +3,25 @@
   width: auto;
   padding: 15px;
   border-right: 2px dotted green;
-  float: left;
+  display: inline-block;
 }
 
 .column input {
   width: 40px;
   text-align: center;
+  font-family: monospace;
+  font-size: 1.1em;
+  border: 1px solid black;
 }
 
 .column table {
   float: left;
+}
+
+td input.na {
+  background-color: #fbb;
+}
+
+td.stats {
+  font-size: 0.7em;
 }

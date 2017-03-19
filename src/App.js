@@ -1,7 +1,10 @@
 import React, { Component } from 'react';
 import { findDOMNode } from 'react-dom';
 import merge from 'lodash/merge';
+import chunk from 'lodash/chunk';
+import zip from 'lodash/zip';
 
+// import './pure-min.css'; // breaks textareas and cell margins
 import './App.css';
 
 import Column from './components/Column';
@@ -40,14 +43,15 @@ const findBibCategory = (bibs, bib) => {
   return found;
 }
 
-const addBib = (category, bib) => (state) => 
+const addBib = (category, bib) => (state) =>
   merge(state, {
     bibs: {
       [category]: [].concat(state.bibs[category] || [], bib)
-    }
+    },
+    last: [].concat(state.last, bib)
   });
 
-const changeBib = (category, index, nextValue) => state => {
+const changeBib = (category, lapNum0, index, nextValue) => state => {
   const oldBibs = state.bibs[category];
   const nextBibs = [
     ...oldBibs.slice(0, index),
@@ -59,6 +63,17 @@ const changeBib = (category, index, nextValue) => state => {
       [category]: nextBibs
     }
   });
+}
+
+const chronoTable = bibsList => {
+  const bibsStr = bibsList.map(b => {
+    if (b >= 100) { return '' + b; }
+    if (b >= 10) { return ' ' + b; }
+    return '  ' + b;
+  })
+  const matRC = chunk(bibsStr, 10);
+  const matCR = zip(...matRC);
+  return matCR;
 }
 
 
@@ -81,6 +96,12 @@ class App extends Component {
 
   persistState() {
     window.localStorage.setItem('state', JSON.stringify(this.state));
+  }
+
+  popLast() {
+    this.setState(state => ({
+      last: state.last.slice(1) || []
+    }));
   }
 
   handleAddBib(e) {
@@ -118,31 +139,32 @@ class App extends Component {
 
   render() {
     const categories = Object.keys(this.state.bibs);
+    const chrono = chronoTable(this.state.chrono);
     return (
       <div className="App">
         <div className="App-header">
           <h2>
             Numero:{' '}
-            <input type="number" defaultValue="" onKeyDown={this.handleAddBib} />
+            <input type="number" defaultValue="" onKeyDown={this.handleAddBib} /><br />
           </h2>
         </div>
-        
+
+        <div className="header-spacer"></div>
+
+        <div className="chrono">
+          <textarea value={chrono.map(r => r.join('  ')).join('\n')} readOnly></textarea>
+        </div>
+
         <div className="float-container">
-          {categories.map(cat => 
+          {categories.map(cat =>
             <Column
               key={cat}
               category={cat}
               onAddBib={bib => this.setState(addBib(cat, bib))}
-              onChangeBib={(index, bib) => this.setState(changeBib(cat, index, bib))}
+              onChangeBib={(lapNum0, index, bib) => this.setState(changeBib(cat, lapNum0, index, bib))}
               bibs={this.state.bibs[cat]}
             />
           )}
-        </div>
-
-        <div className="chrono">
-          <h2>Cronologico</h2>
-          <textarea value={this.state.chrono.join('  ')} readOnly></textarea>
-          <small>(leggere in orizzontale, per righe)</small>
         </div>
 
         <div className="categories-input">

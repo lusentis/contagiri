@@ -41,11 +41,10 @@ export default function column({
     e.target.value = '';
     onAddBib(bib);
   }
-  // const handleChangeBib = index => e => {
-  //   // inconsistent behaviour, do not use
-  //   // const nextBib = Number(e.target.value);
-  //   // onChangeBib(index, nextBib);
-  // }
+  const handleChangeBib = (lapNum0, index) => e => {
+    const nextBib = Number(e.target.value);
+    onChangeBib(lapNum0, index, nextBib);
+  }
   const laps = bibs ? computeLaps(bibs) : [[]];
   return (
     <div className="column">
@@ -54,6 +53,8 @@ export default function column({
         if (lapNum0 !== 0 && lap.length === 0) {
           return false;
         }
+        let totalCount = 0;
+        let naCount = 0;
         return (
           <table key={lapNum0}>
             <thead>
@@ -62,19 +63,31 @@ export default function column({
               </tr>
             </thead>
             <tbody>
-              {lap.map((bib, index) => (
-                <tr key={bib}>
-                  <td>
-                    <input
-                      type="number"
-                      defaultValue={bib}
-                      readOnly
-                      // onKeyDown={handleChangeBib(index)}
-                      // onBlur={handleChangeBib(index)}
-                    />
-                  </td>
-                </tr>
-              ))}
+              {lap.map((bib, index) => {
+                if (bib === 0) {
+                  return false;
+                }
+                totalCount = totalCount + 1;
+                let className = '';
+                if (lapNum0 < laps.length && laps[lapNum0 + 1].indexOf(bib) === -1) {
+                  naCount = naCount + 1;
+                  className = className + 'na';
+                }
+                return (
+                  <tr key={bib}>
+                    <td>
+                      <input
+                        type="number"
+                        className={className}
+                        defaultValue={bib}
+                        readOnly={lapNum0 !== 0}
+                        onKeyDown={lapNum0 === 0 ? handleChangeBib(lapNum0, index): () => {}}
+                        onBlur={lapNum0 === 0 ? handleChangeBib(lapNum0, index) : () => {}}
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
               {lapNum0 === 0 &&
                 <tr>
                   <td>
@@ -87,6 +100,11 @@ export default function column({
                   </td>
                 </tr>
               }
+              <tr>
+                <td className="stats">
+                  <em><span style={{ color: 'green' }}>{totalCount - naCount}</span> / {totalCount}</em>
+                </td>
+              </tr>
             </tbody>
           </table>
         );
