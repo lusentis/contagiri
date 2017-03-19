@@ -28,21 +28,27 @@ const computeLaps = bibs => {
 
 export default function column({
   category,
-  onAddBib,
+  onCategoryAddBib,
   onChangeBib,
   bibs
 }) {
-  const handleAddBib = e => {
+  const handleCategoryAddBib = e => {
     if (e.nativeEvent.keyCode &&
         e.nativeEvent.keyCode !== 13) {
       return;
     }
     const bib = Number(e.target.value);
+    if (!bib) {
+      return;
+    }
     e.target.value = '';
-    onAddBib(bib);
+    onCategoryAddBib(bib);
   }
   const handleChangeBib = (lapNum0, index) => e => {
     const nextBib = Number(e.target.value);
+    if (!nextBib) {
+      return;
+    }
     onChangeBib(lapNum0, index, nextBib);
   }
   const laps = bibs ? computeLaps(bibs) : [[]];
@@ -67,11 +73,14 @@ export default function column({
                 if (bib === 0) {
                   return false;
                 }
-                totalCount = totalCount + 1;
+                totalCount++;
                 let className = '';
                 if (lapNum0 < laps.length && laps[lapNum0 + 1].indexOf(bib) === -1) {
-                  naCount = naCount + 1;
-                  className = className + 'na';
+                  naCount++;
+                  className += 'na';
+                }
+                if (!bib) {
+                  return false; // ???
                 }
                 return (
                   <tr key={bib}>
@@ -94,8 +103,8 @@ export default function column({
                     <input
                       type="number"
                       defaultValue=""
-                      onKeyDown={handleAddBib}
-                      onBlur={handleAddBib}
+                      onKeyDown={handleCategoryAddBib}
+                      onBlur={handleCategoryAddBib}
                     />
                   </td>
                 </tr>

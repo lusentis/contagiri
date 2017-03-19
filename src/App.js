@@ -3,6 +3,7 @@ import { findDOMNode } from 'react-dom';
 import merge from 'lodash/merge';
 import chunk from 'lodash/chunk';
 import zip from 'lodash/zip';
+import groupBy from 'lodash/groupBy';
 
 // import './pure-min.css'; // breaks textareas and cell margins
 import './App.css';
@@ -43,12 +44,11 @@ const findBibCategory = (bibs, bib) => {
   return found;
 }
 
-const addBib = (category, bib) => (state) =>
+const categoryAddBib = (category, bib) => (state) =>
   merge(state, {
     bibs: {
       [category]: [].concat(state.bibs[category] || [], bib)
-    },
-    last: [].concat(state.last, bib)
+    }
   });
 
 const changeBib = (category, lapNum0, index, nextValue) => state => {
@@ -63,6 +63,12 @@ const changeBib = (category, lapNum0, index, nextValue) => state => {
       [category]: nextBibs
     }
   });
+}
+
+const addBib = bib => state => {
+  return {
+    chrono: [].concat(state.chrono, bib)
+  };
 }
 
 const chronoTable = bibsList => {
@@ -81,9 +87,10 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.state = merge(INITIAL_STATE, savedState);
-    this.handleAddBib = this.handleAddBib.bind(this);
+    this.handleCategoryAddBib = this.handleCategoryAddBib.bind(this);
     this.persistState = this.persistState.bind(this);
     this.handleSetCategories = this.handleSetCategories.bind(this);
+    this.handleBibEvent = this.handleBibEvent.bind(this);
   }
 
   componentDidMount() {
@@ -98,13 +105,7 @@ class App extends Component {
     window.localStorage.setItem('state', JSON.stringify(this.state));
   }
 
-  popLast() {
-    this.setState(state => ({
-      last: state.last.slice(1) || []
-    }));
-  }
-
-  handleAddBib(e) {
+  handleCategoryAddBib(e) {
     if (e.nativeEvent.keyCode !== 13) {
       return;
     }
@@ -114,8 +115,16 @@ class App extends Component {
     if (category === false) {
       return;
     }
-    this.setState(addBib(category, bib));
-    this.setState(state => ({ chrono: [].concat(state.chrono, [bib]) }));
+    this.setState(categoryAddBib(category, bib));
+  }
+
+  handleBibEvent(e) {
+    if (e.nativeEvent.keyCode !== 13) {
+      return;
+    }
+    const bib = Number(e.target.value);
+    e.target.value = '';
+    this.setState(addBib(bib))
   }
 
   handleSetCategories(e) {
@@ -140,12 +149,13 @@ class App extends Component {
   render() {
     const categories = Object.keys(this.state.bibs);
     const chrono = chronoTable(this.state.chrono);
+    const chronoByCat = groupBy(this.state.chrono, bib => findBibCategory(this.state.bibs, bib));
     return (
       <div className="App">
         <div className="App-header">
           <h2>
             Numero:{' '}
-            <input type="number" defaultValue="" onKeyDown={this.handleAddBib} /><br />
+            <input type="number" defaultValue="" onKeyDown={this.handleBibEvent} /><br />
           </h2>
         </div>
 
@@ -160,9 +170,9 @@ class App extends Component {
             <Column
               key={cat}
               category={cat}
-              onAddBib={bib => this.setState(addBib(cat, bib))}
+              onCategoryAddBib={bib => this.setState(categoryAddBib(cat, bib))}
               onChangeBib={(lapNum0, index, bib) => this.setState(changeBib(cat, lapNum0, index, bib))}
-              bibs={this.state.bibs[cat]}
+              bibs={[].concat(this.state.bibs[cat], chronoByCat[cat])}
             />
           )}
         </div>
