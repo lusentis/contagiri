@@ -32,7 +32,12 @@ export default function column({
   onChangeBib,
   bibs
 }) {
-  const handleCategoryAddBib = e => {
+  const handleCategoryAddBib = ({ prev = 0 }) => e => {
+    if (e.nativeEvent.keyCode === 107) {
+      e.target.value = Number(prev) + 1;
+      e.preventDefault();
+      return;
+    }
     if (e.nativeEvent.keyCode &&
         e.nativeEvent.keyCode !== 13) {
       return;
@@ -61,6 +66,7 @@ export default function column({
         }
         let totalCount = 0;
         let naCount = 0;
+        let lastBib = 0;
         return (
           <table key={lapNum0}>
             <thead>
@@ -82,9 +88,10 @@ export default function column({
                 if (!bib) {
                   return false; // ???
                 }
+                lastBib = bib;
                 return (
                   <tr key={bib}>
-                    <td>
+                    <td className={lapNum0 === 0 ? 'first' : ''}>
                       <input
                         type="number"
                         className={className}
@@ -103,7 +110,7 @@ export default function column({
                     <input
                       type="number"
                       defaultValue=""
-                      onKeyDown={handleCategoryAddBib}
+                      onKeyDown={handleCategoryAddBib({ prev: lastBib })}
                       onBlur={handleCategoryAddBib}
                     />
                   </td>

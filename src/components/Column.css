@@ -19,9 +19,18 @@
 }
 
 td input.na {
-  background-color: #fbb;
+  background-color: #faa;
 }
 
 td.stats {
   font-size: 0.7em;
+}
+
+td.first input {
+  background-color: #afa;
+  font-weight: bold;
+}
+
+td:not(.first) input {
+  border: 1px dotted gray;
 }

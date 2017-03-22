@@ -39,7 +39,7 @@ const findBibCategory = (bibs, bib) => {
     }
   });
   if (!found) {
-    alert('#' + bib + ': CATEGORIA MANCANTE (ignorato)');
+    console.log('#' + bib + ': CATEGORIA MANCANTE (ignorato)');
   }
   return found;
 }
@@ -91,6 +91,8 @@ class App extends Component {
     this.persistState = this.persistState.bind(this);
     this.handleSetCategories = this.handleSetCategories.bind(this);
     this.handleBibEvent = this.handleBibEvent.bind(this);
+    this.handleBackupDownload = this.handleBackupDownload.bind(this);
+    this.handleBackupUpload = this.handleBackupUpload.bind(this);
   }
 
   componentDidMount() {
@@ -124,6 +126,10 @@ class App extends Component {
     }
     const bib = Number(e.target.value);
     e.target.value = '';
+    if (!findBibCategory(this.state.bibs, bib)) {
+      alert('Non esiste: ' + bib);
+      return;
+    }
     this.setState(addBib(bib))
   }
 
@@ -146,9 +152,27 @@ class App extends Component {
     })
   }
 
+  handleBackupDownload(e) {
+    e.preventDefault();
+    const a = document.createElement('a');
+    const blob = new Blob([JSON.stringify(this.state)], {'type':'application/json'});
+    a.href = window.URL.createObjectURL(blob);
+    a.download = 'backup-' + Date.now() + '.json';
+    a.click();
+  }
+
+  handleBackupUpload(e) {
+    e.preventDefault();
+    const reader = new FileReader();
+    reader.onload = e => {
+      this.setState(JSON.parse(e.target.result));
+    };
+    reader.readAsText(e.target.files[0]);
+  }
+
   render() {
     const categories = Object.keys(this.state.bibs);
-    const chrono = chronoTable(this.state.chrono);
+    const chrono = chronoTable(this.state.chrono.filter(bib => bib !== 0));
     const chronoByCat = groupBy(this.state.chrono, bib => findBibCategory(this.state.bibs, bib));
     return (
       <div className="App">
@@ -188,6 +212,19 @@ class App extends Component {
             <button type="submit" onClick={this.handleSetCategories}>
               Aggiorna categorie
             </button>
+          </p>
+        </div>
+
+        <div className="categories-input">
+          <p>
+            Scarica backup:
+            <button type="submit" onClick={this.handleBackupDownload}>
+              Download
+            </button>
+            <br />
+            <br />
+            Carica backup:
+            <input type="file" onChange={this.handleBackupUpload} />
           </p>
         </div>
 
