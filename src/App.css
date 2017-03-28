@@ -1,3 +1,8 @@
+
+input {
+  color: black !important;
+}
+
 .App {
   text-align: center;
   overflow: auto;
@@ -40,17 +45,9 @@
   overflow: auto;
 }
 
-.categories-input {
-  margin: auto;
-  margin-top: 40px;
-  padding-top: 20px;
-  border-top: 2px solid black;
-  width: 100%;
-}
-.categories-input textarea {
-  display: block;
-  height: 100px;
-  width: 200px;
+textarea.categories-input {
+  height: 200px;
+  width: 90%;
   margin: auto;
 }
 
