@@ -71,7 +71,7 @@ export default function column({
           <table key={lapNum0}>
             <thead>
               <tr>
-                <td>{lapNum0 === 0 ? 'lista conc.' : ('giro ' + lapNum0)}</td>
+                <td>{lapNum0 === 0 ? 'griglia' : ('giro ' + lapNum0)}</td>
               </tr>
             </thead>
             <tbody>
