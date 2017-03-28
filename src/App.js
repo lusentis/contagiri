@@ -45,12 +45,17 @@ const findBibCategory = (bibs, bib) => {
   return found;
 }
 
-const categoryAddBib = (category, bib) => (state) =>
-  merge(state, {
+const categoryAddBib = (category, bib) => (state) => {
+  if (state.bibs[category].indexOf(bib) !== -1) {
+    alert('Il concorrente è già in griglia');
+    return state;
+  }
+  return merge(state, {
     bibs: {
       [category]: [].concat(state.bibs[category] || [], bib)
     }
   });
+};
 
 const changeBib = (category, lapNum0, index, nextValue) => state => {
   const oldBibs = state.bibs[category];
@@ -69,6 +74,37 @@ const changeBib = (category, lapNum0, index, nextValue) => state => {
 const addBib = bib => state => {
   return {
     chrono: [].concat(state.chrono, bib)
+  };
+}
+
+const removeLastBib = bib => state => {
+  if (state.chrono.lastIndexOf(bib) === -1) {
+    alert('Non posso eliminare l\'ultimo giro perché non esiste: ' + bib);
+    return;
+  }
+  return {
+    chrono: [
+      ...state.chrono.slice(0, state.chrono.lastIndexOf(bib)),
+      ...state.chrono.slice(state.chrono.lastIndexOf(bib) + 1)
+    ]
+  };
+}
+
+const fixupLastBib = bib => state => {
+  if (state.chrono.lastIndexOf(bib) === -1) {
+    alert('Non posso correggere l\'ultimo giro perché non esiste: ' + bib);
+    return;
+  }
+  const next = Number(prompt('Sostituire con?'));
+  if (!next) {
+    return state;
+  }
+  return {
+    chrono: [
+      ...state.chrono.slice(0, state.chrono.lastIndexOf(bib)),
+      next,
+      ...state.chrono.slice(state.chrono.lastIndexOf(bib) + 1)
+    ]
   };
 }
 
@@ -130,11 +166,29 @@ class App extends Component {
   }
 
   handleBibEvent(e) {
-    if (e.nativeEvent.keyCode !== 13) {
+    if (e.nativeEvent.keyCode !== 13 &&
+        e.nativeEvent.keyCode !== 109 &&
+        e.nativeEvent.keyCode !== 106
+    ) {
       return;
     }
     const bib = Number(e.target.value);
     e.target.value = '';
+
+    if (e.nativeEvent.keyCode === 109) {
+      // subtract
+      this.setState(removeLastBib(bib))
+      e.preventDefault();
+      return;
+    }
+
+    if (e.nativeEvent.keyCode === 106) {
+      // multiply
+      this.setState(fixupLastBib(bib))
+      e.preventDefault();
+      return;
+    }
+
     if (!findBibCategory(this.state.bibs, bib)) {
       alert('Non esiste: ' + bib);
       return;
@@ -214,6 +268,7 @@ class App extends Component {
           <h2>
             Numero:{' '}
             <input type="number" defaultValue="" onKeyDown={this.handleBibEvent} /><br />
+            <small>↵ aggiunge, - rimuove, * corregge</small>
           </h2>
         </div>
 

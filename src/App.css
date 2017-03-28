@@ -18,12 +18,12 @@ input {
   padding: 5px;
   color: white;
   position: fixed;
-  height: 80px;
+  height: 100px;
   width: 100%;
 }
 
 .header-spacer {
-  height: 80px;
+  height: 100px;
 }
 
 .App-header input {
@@ -39,6 +39,10 @@ input {
 @keyframes App-logo-spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+h2 small {
+  font-size: 10px;
 }
 
 .float-container {
