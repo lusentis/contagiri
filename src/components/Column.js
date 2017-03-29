@@ -3,7 +3,7 @@ import React from 'react';
 
 import './Column.css'
 
-const MAX_LAPS = 10 + 1; // add 1 to the expected laps count
+const MAX_LAPS = 20 + 1; // add 1 to the expected laps count
 
 const computeLaps = bibs => {
   const laps = new Array(MAX_LAPS);
@@ -20,7 +20,7 @@ const computeLaps = bibs => {
       }
     }
     if (!added) {
-      console.log('troppi giri', bib);
+      alert('troppi giri', bib);
     }
   });
   return laps;
@@ -81,7 +81,10 @@ export default function column({
                 }
                 totalCount++;
                 let className = '';
-                if (lapNum0 < laps.length && laps[lapNum0 + 1].indexOf(bib) === -1) {
+                if (lapNum0 < laps.length &&
+                  Array.isArray(laps[lapNum0 + 1]) &&
+                  laps[lapNum0 + 1].indexOf(bib) === -1
+                ) {
                   naCount++;
                   className += 'na';
                 }
