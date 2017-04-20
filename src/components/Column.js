@@ -3,7 +3,7 @@ import React from 'react';
 
 import './Column.css'
 
-const MAX_LAPS = 20 + 1; // add 1 to the expected laps count
+const MAX_LAPS = 150 + 1; // add 1 to the expected laps count
 
 const computeLaps = bibs => {
   const laps = new Array(MAX_LAPS);
