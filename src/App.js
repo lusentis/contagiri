@@ -330,7 +330,7 @@ class App extends Component {
         prefisso + "" + pad4(bib),
         bib,
         ",",
-        "",
+        findBibCategory(this.state.bibs, Number(bib)),
         ...tempi
       ];
       rows.push(row);
