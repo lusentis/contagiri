@@ -223,10 +223,16 @@ class App extends Component {
     this.handleBackupDownload = this.handleBackupDownload.bind(this);
     this.handleBackupUpload = this.handleBackupUpload.bind(this);
     this.handleClassifyDownload = this.handleClassifyDownload.bind(this);
+    this.scrollChrono = this.scrollChrono.bind(this);
+  }
+
+  scrollChrono() {
+    findDOMNode(this.scrollingArea).scrollLeft = Number.MAX_SAFE_INTEGER - Math.random();
   }
 
   componentDidMount() {
     this._persistInterval = setInterval(this.persistState, 500);
+    this.scrollChrono();
   }
 
   componentWillUnmount() {
@@ -413,20 +419,21 @@ class App extends Component {
         <div className="App-header">
           <h2>
             Numero:{' '}
-            <input type="number" defaultValue="" onKeyDown={this.handleBibEvent} /><br />
+            <input type="number" defaultValue="" onKeyDown={e => { this.handleBibEvent(e); this.scrollChrono(); }} /><br />
             <small>↵ aggiunge, - rimuove u.g., * corregge u.g.</small>
           </h2>
         </div>
 
         <div className="header-spacer"></div>
 
-        <div className="chrono" style={{ width: window.innerWidth - 50, overflowX: "scroll" }}>
-          <table className="table" style={{ maxWidth: "100%", overflowX: "scroll" }}>
+        <div className="chrono" style={{ width: window.innerWidth - 50, overflowX: "scroll" }} ref={_ref => this.scrollingArea = _ref}>
+          <table className="table" style={{ maxWidth: "100%" }}>
             <tbody>
               {chrono.map((row, rowIndex) =>
-                <tr>
+                <tr key={rowIndex}>
                   {row.map((cell, cellIndex) =>
                     cell && <td
+                      key={cell[0] + '-' + cellIndex}
                       className="chrono-td"
                       style={{ fontFamily: "monospace", textAlign: "right", minWidth: 220 }}
                     >
