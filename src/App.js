@@ -36,7 +36,7 @@ const resetAll = () => {
   });
 };
 
-const findBibCategory = (bibs, bib) => {
+const findBibCategory = memoize((bibs, bib) => {
   const cats = Object.keys(bibs);
   let found = false;
   cats.forEach(catName => {
@@ -51,7 +51,7 @@ const findBibCategory = (bibs, bib) => {
     console.log('#' + bib + ': CATEGORIA MANCANTE (ignorato)');
   }
   return found;
-}
+});
 
 const categoryAddBib = (category, bib) => (state) => {
   if (state.bibs[category].indexOf(bib) !== -1) {
@@ -133,6 +133,52 @@ const fixupLastBib = bib => state => {
   };
 }
 
+const insertBibTime = index => state => {
+  const insertNew = (() => {
+    if (confirm('Inserisci un nuovo concorrente? (annulla per sostituire)')) {
+      return true;
+    }
+    return false;
+  })();
+  const bib = Number(prompt('PETTORALE?', insertNew ? '' : state.chrono[index]));
+  if (!bib) {
+    return state;
+  }
+  const suggestedTime = state.tempi[index] ? moment(state.tempi[index]).format('HHmmss.SSS') : '';
+  const time = prompt('TEMPO? (hhmmss.dcm)', suggestedTime);
+  if (!time) {
+    return state;
+  }
+  const parsedTime = moment(time, 'HHmmss.SSS').valueOf();
+  if (!parsedTime) {
+    alert('Errore: formato ora non valido, usa hhmmss.dcm');
+    insertBibTime(index)(state);
+    return;
+  }
+  if (parsedTime < state.tempi[index - 1]) {
+    // alert('Attenzione: il tempo non dovrebbe essere inferiore al precedente');
+    // insertBibTime(index)(state);
+    // return;
+  }
+  if (parsedTime > state.tempi[index + 1]) {
+    // alert('Attenzione: il tempo non dovrebbe essere superiore al sccessivo');
+    // insertBibTime(index)(state);
+    // return;
+  }
+  return {
+    chrono: [
+      ...state.chrono.slice(0, index),
+      bib,
+      ...state.chrono.slice(index + (insertNew ? 0 : 1))
+    ],
+    tempi: [
+      ...state.tempi.slice(0, index),
+      parsedTime,
+      ...state.tempi.slice(index + (insertNew ? 0 : 1))
+    ]
+  };
+}
+
 const formatTempo = memoize(t => moment(t).format('HH:mm:ss,SSS'));
 const pad4 = b => {
   let str;
@@ -150,7 +196,7 @@ const chronoTable = memoize((bibsList, tempi) => {
     else if (b >= 10) { str = ' ' + b; }
     else { str = '  ' + b };
     const tempo = formatTempo(tempi[index]);
-    return [ str, tempo ];
+    return [ str, tempo, index ];
   });
   const matRC = chunk(bibsStr, 10);
   const matCR = zip(...matRC);
@@ -207,21 +253,26 @@ class App extends Component {
   handleBibEvent(e) {
     if (e.nativeEvent.keyCode !== 13 &&
         e.nativeEvent.keyCode !== 109 &&
-        e.nativeEvent.keyCode !== 106
+        e.nativeEvent.keyCode !== 189 &&
+        e.nativeEvent.keyCode !== 106 &&
+        (e.nativeEvent.keyCode !== 187 || !e.nativeEvent.shiftKey)
     ) {
+      console.log(e.nativeEvent);
       return;
     }
     const bib = Number(e.target.value);
     e.target.value = '';
 
-    if (e.nativeEvent.keyCode === 109) {
+    if (e.nativeEvent.keyCode === 109 || // minus from keypad
+        e.nativeEvent.keyCode === 189) { // dash
       // subtract
       this.setState(removeLastBib(bib))
       e.preventDefault();
       return;
     }
 
-    if (e.nativeEvent.keyCode === 106) {
+    if (e.nativeEvent.keyCode === 106 ||
+        (e.nativeEvent.keyCode === 187 && e.nativeEvent.shiftKey)) {
       // multiply
       this.setState(fixupLastBib(bib))
       e.preventDefault();
@@ -229,8 +280,7 @@ class App extends Component {
     }
 
     if (!findBibCategory(this.state.bibs, bib)) {
-      alert('Non esiste: ' + bib);
-      return;
+      alert('Senza categoria (aggiungo comunque): ' + bib);
     }
     this.setState(addBib(bib))
   }
@@ -241,8 +291,11 @@ class App extends Component {
       return;
     }
     const currentCats = Object.keys(this.state.bibs);
-    const requestedCats = findDOMNode(this._catsList).value.split('\n').map(c => c.trim().split('\t'));
+    const requestedCats = findDOMNode(this._catsList).value.split('\n').map(c => c.trim().split(/\t|\s/));
     requestedCats.forEach(([cat, ...bibs]) => {
+      if (!cat) {
+        return;
+      }
       if (currentCats.indexOf(cat) === -1) {
         this.setState(state => ({
           bibs: {
@@ -355,26 +408,42 @@ class App extends Component {
           <h2>
             Numero:{' '}
             <input type="number" defaultValue="" onKeyDown={this.handleBibEvent} /><br />
-            <small>↵ aggiunge, - rimuove, * corregge</small>
+            <small>↵ aggiunge, - rimuove u.g., * corregge u.g.</small>
           </h2>
         </div>
 
         <div className="header-spacer"></div>
 
-        <div className="chrono">
+        <div className="chrono" style={{ width: window.innerWidth - 50, overflowX: "scroll" }}>
           <table className="table" style={{ maxWidth: "100%", overflowX: "scroll" }}>
-            {chrono.map(row =>
-              <tr>
-                {row.map(cell =>
-                  cell && <td style={{ fontFamily: "monospace", textAlign: "right" }}>
-                            <strong>{cell[0]}</strong>{' '}
-                            <span style={{ color: "blue" }}>{cell[1]}</span>
-                            &nbsp;
-                            &nbsp;
-                          </td>
-                )}
-              </tr>
-            )}
+            <tbody>
+              {chrono.map((row, rowIndex) =>
+                <tr>
+                  {row.map((cell, cellIndex) =>
+                    cell && <td
+                      className="chrono-td"
+                      style={{ fontFamily: "monospace", textAlign: "right", minWidth: 200 }}
+                    >
+                              <strong
+                                onClick={e => this.setState(insertBibTime(cell[2]))}
+                                style={{
+                                  cursor: "pointer",
+                                  backgroundColor: findBibCategory(this.state.bibs, Number(cell[0])) ? '' : 'red'
+                                }}
+                              >{cell[0]}</strong>{' '}
+                              <span
+                                style={{
+                                  color: "blue",
+                                  backgroundColor: (this.state.tempi[cell[2]] < this.state.tempi[cell[2] - 1] || this.state.tempi[cell[2]] > this.state.tempi[cell[2] + 1]) ? 'red' : ''
+                                }}
+                              >{cell[1]}</span>
+                              &nbsp;
+                              &nbsp;
+                            </td>
+                  )}
+                </tr>
+              )}
+            </tbody>
           </table>
         </div>
 
@@ -442,7 +511,7 @@ class App extends Component {
             </button>
             <br />
             <button type="submit" onClick={this.handleClassifyDownload} style={{ color: 'blue' }}>
-              Download CSV-; Classify
+              Download CSV-;
             </button>
             <br />
             <br />

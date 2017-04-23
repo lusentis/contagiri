@@ -18,12 +18,13 @@ input {
   padding: 5px;
   color: white;
   position: fixed;
-  height: 100px;
+  height: 120px;
   width: 100%;
+  margin-bottom: 50px;
 }
 
 .header-spacer {
-  height: 100px;
+  height: 130px;
 }
 
 .App-header input {
@@ -64,6 +65,18 @@ textarea.categories-input {
   width: calc(100% - 100px);
   height: 18rem;
   line-height: 1.8em;
+}
+
+.chrono-td span, .chrono-td strong {
+  display: inline-block;
+  padding: 3px 0;
+}
+.chrono-td:hover {
+  background-color: black;
+  color: white;
+}
+.chrono-td:hover span {
+  color: white !important;
 }
 
 button[type="reset"] {
