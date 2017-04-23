@@ -255,12 +255,12 @@ class App extends Component {
         e.nativeEvent.keyCode !== 109 &&
         e.nativeEvent.keyCode !== 189 &&
         e.nativeEvent.keyCode !== 106 &&
-        (e.nativeEvent.keyCode !== 187 || !e.nativeEvent.shiftKey)
+        !(e.nativeEvent.keyCode === 187 && e.nativeEvent.shiftKey)
     ) {
       console.log(e.nativeEvent);
       return;
     }
-    const bib = Number(e.target.value);
+    let bib = Number(e.target.value);
     e.target.value = '';
 
     if (e.nativeEvent.keyCode === 109 || // minus from keypad
@@ -279,8 +279,15 @@ class App extends Component {
       return;
     }
 
+    if (!bib) {
+      bib = 9999;
+    }
+
     if (!findBibCategory(this.state.bibs, bib)) {
-      alert('Senza categoria (aggiungo comunque): ' + bib);
+      if (bib !== 9999) {
+        // no alert if bib was auto-inserted
+        alert('Senza categoria (aggiungo comunque): ' + bib);
+      }
     }
     this.setState(addBib(bib))
   }
@@ -422,7 +429,7 @@ class App extends Component {
                   {row.map((cell, cellIndex) =>
                     cell && <td
                       className="chrono-td"
-                      style={{ fontFamily: "monospace", textAlign: "right", minWidth: 200 }}
+                      style={{ fontFamily: "monospace", textAlign: "right", minWidth: 220 }}
                     >
                               <strong
                                 onClick={e => this.setState(insertBibTime(cell[2]))}

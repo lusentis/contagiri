@@ -31,6 +31,10 @@ td.first input {
   font-weight: bold;
 }
 
+td.first input.na {
+  background-color: #faa;
+}
+
 td:not(.first) input {
   border: 1px dotted gray;
 }
