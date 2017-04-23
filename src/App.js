@@ -257,7 +257,6 @@ class App extends Component {
         e.nativeEvent.keyCode !== 106 &&
         !(e.nativeEvent.keyCode === 187 && e.nativeEvent.shiftKey)
     ) {
-      console.log(e.nativeEvent);
       return;
     }
     let bib = Number(e.target.value);
