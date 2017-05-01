@@ -3,25 +3,29 @@
   "version": "0.1.0",
   "private": true,
   "main": "server.js",
+  "bin": "server.js",
   "dependencies": {
+    "express": "^4.15.2",
     "fast-memoize": "^2.2.7",
     "lodash": "^4.17.4",
     "moment": "^2.18.1",
     "open": "^0.0.5",
     "react": "^15.4.2",
-    "react-dom": "^15.4.2",
-    "serve": "^5.1.4"
+    "react-dom": "^15.4.2"
   },
   "devDependencies": {
     "react-scripts": "0.9.5"
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "rm -r build && react-scripts build",
     "test": "react-scripts test --env=jsdom",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "bundle": "pkg . --out-dir _binaries"
   },
   "pkg": {
-    "assets": "build/**/*"
+    "assets": [
+      "build/**/*"
+    ]
   }
 }

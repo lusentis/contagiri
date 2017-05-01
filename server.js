@@ -1,13 +1,13 @@
 
-const serve = require('serve');
+const express = require('express');
 const open = require('open');
 const path = require('path');
 
 const PORT = process.env.PORT || 8080;
 
-serve(path.join(__dirname, 'build'), {
-  port: PORT,
-  ignore: ['node_modules']
-});
+const app = express();
+app.use(express.static('build'));
+app.listen(PORT);
 
+console.log('Server ready on', `http://127.0.0.1:${PORT}`);
 open(`http://127.0.0.1:${PORT}`);
