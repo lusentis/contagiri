@@ -2,13 +2,15 @@
   "name": "contagiri",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://lusentis.github.io/contagiri/build/",
+  "main": "server.js",
   "dependencies": {
     "fast-memoize": "^2.2.7",
     "lodash": "^4.17.4",
     "moment": "^2.18.1",
+    "open": "^0.0.5",
     "react": "^15.4.2",
-    "react-dom": "^15.4.2"
+    "react-dom": "^15.4.2",
+    "serve": "^5.1.4"
   },
   "devDependencies": {
     "react-scripts": "0.9.5"
@@ -18,5 +20,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
+  },
+  "pkg": {
+    "assets": "build/**/*"
   }
 }
