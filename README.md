@@ -12,3 +12,8 @@ Contagiri
 - [Windows 64 bit](https://github.com/lusentis/contagiri/blob/master/_binaries/contagiri-win.exe?raw=true)
 - [macOS](https://github.com/lusentis/contagiri/blob/master/_binaries/contagiri-macos?raw=true)
 - [Linux 64 bit](https://github.com/lusentis/contagiri/blob/master/_binaries/contagiri-linux?raw=true)
+
+## Versioni
+
+#### 20170501
+- primo rilascio
