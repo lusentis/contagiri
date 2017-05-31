@@ -518,6 +518,8 @@ class App extends Component {
           <div className="pure-u-1-3">
             <h3>Gestione gara</h3>
 
+            <p>Contagiri versione: 2017-05-31 2339</p>
+
             <strong>Scarica:</strong><br />
             <button type="submit" onClick={this.handleBackupDownload}>
               Download backup (JSON)
