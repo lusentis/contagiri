@@ -303,7 +303,7 @@ class App extends Component {
       return;
     }
     const currentCats = Object.keys(this.state.bibs);
-    const requestedCats = findDOMNode(this._catsList).value.split('\n').map(c => c.trim().split(/\t|\s/));
+    const requestedCats = findDOMNode(this._catsList).value.split('\n').map(c => c.trim().split(/\t|\s{2,}/));
     requestedCats.forEach(([cat, ...bibs]) => {
       if (!cat) {
         return;
