@@ -22,7 +22,7 @@
     "build": "rm -r build && react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject",
-    "bundle": "pkg . --out-dir _binaries"
+    "bundle": "yarn run build && pkg . --out-dir _binaries"
   },
   "pkg": {
     "assets": [
