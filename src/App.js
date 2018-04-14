@@ -288,12 +288,9 @@ class App extends Component {
       bib = 9999;
     }
 
-    if (!findBibCategory(this.state.bibs, bib)) {
-      if (bib !== 9999) {
-        // no alert if bib was auto-inserted
-        alert('Senza categoria (aggiungo comunque): ' + bib);
-      }
-    }
+    // if (!findBibCategory(this.state.bibs, bib)) {
+    // maybe display category somewhere
+    // }
     this.setState(addBib(bib))
   }
 
