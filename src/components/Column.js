@@ -1,6 +1,6 @@
-import React from 'react';
+import React from "react";
 
-import './Column.css';
+import "./Column.css";
 
 const MAX_LAPS = 150 + 1; // add 1 to the expected laps count
 
@@ -19,7 +19,7 @@ const computeLaps = bibs => {
       }
     }
     if (!added) {
-      alert('troppi giri', bib);
+      alert("troppi giri", bib);
     }
   });
   return laps;
@@ -29,7 +29,7 @@ export default function column({
   category,
   onCategoryAddBib,
   onChangeBib,
-  bibs
+  bibs,
 }) {
   const handleCategoryAddBib = ({ prev = 0 }) => e => {
     if (e.nativeEvent.keyCode === 107) {
@@ -44,7 +44,7 @@ export default function column({
     if (!bib) {
       return;
     }
-    e.target.value = '';
+    e.target.value = "";
     onCategoryAddBib(bib);
   };
   const handleChangeBib = (lapNum0, index) => e => {
@@ -69,19 +69,19 @@ export default function column({
           <table key={lapNum0}>
             <thead>
               <tr>
-                <td>{lapNum0 === 0 ? 'griglia' : 'g' + lapNum0}</td>
+                <td>{lapNum0 === 0 ? "griglia" : "g" + lapNum0}</td>
               </tr>
             </thead>
             <tbody>
               {lap.map((bib, index) => {
-                let className = '';
+                let className = "";
                 if (
                   lapNum0 < laps.length &&
                   Array.isArray(laps[lapNum0 + 1]) &&
                   laps[lapNum0 + 1].indexOf(bib) === -1
                 ) {
                   naCount++;
-                  className += 'na';
+                  className += "na";
                 }
                 if (!bib) {
                   return false; // ???
@@ -89,7 +89,7 @@ export default function column({
                 lastBib = bib;
                 return (
                   <tr key={bib}>
-                    <td className={lapNum0 === 0 ? 'first' : ''}>
+                    <td className={lapNum0 === 0 ? "first" : ""}>
                       <input
                         type="number"
                         className={className}
@@ -110,7 +110,7 @@ export default function column({
                   </tr>
                 );
               })}
-              {lapNum0 === 0 &&
+              {lapNum0 === 0 && (
                 <tr>
                   <td>
                     <input
@@ -120,16 +120,12 @@ export default function column({
                       onBlur={handleCategoryAddBib}
                     />
                   </td>
-                </tr>}
+                </tr>
+              )}
               <tr>
                 <td className="stats">
                   <em>
-                    <span style={{ color: 'green' }}>
-                      {lap.length}
-                    </span>
-                    {' '}
-                    /
-                    {' '}
+                    <span style={{ color: "green" }}>{lap.length}</span> /{" "}
                     {totalCount}
                   </em>
                 </td>

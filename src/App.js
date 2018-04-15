@@ -1,29 +1,29 @@
-import React, { Component } from 'react';
-import { findDOMNode } from 'react-dom';
-import merge from 'lodash/merge';
-import chunk from 'lodash/chunk';
-import zip from 'lodash/zip';
-import groupBy from 'lodash/groupBy';
-import memoize from 'fast-memoize';
-import moment from 'moment';
+import React, { Component } from "react";
+import { findDOMNode } from "react-dom";
+import merge from "lodash/merge";
+import chunk from "lodash/chunk";
+import zip from "lodash/zip";
+import groupBy from "lodash/groupBy";
+import memoize from "fast-memoize";
+import moment from "moment";
 
 // import './pure-min.css'; // breaks textareas and cell margins
-import './App.css';
+import "./App.css";
 
-import Column from './components/Column';
+import Column from "./components/Column";
 
 const INITIAL_STATE = {
   bibs: {},
   chrono: [],
-  tempi: []
+  tempi: [],
 };
 
-const savedStateStr = window.localStorage.getItem('state') || '{}';
+const savedStateStr = window.localStorage.getItem("state") || "{}";
 const savedState = JSON.parse(savedStateStr);
 
 const doubleConfirm = cb => {
-  if (confirm('Vuoi veramente eliminare tutti i dati?')) {
-    if (confirm('Sei sicuro di voler fare un reset completo?')) {
+  if (confirm("Vuoi veramente eliminare tutti i dati?")) {
+    if (confirm("Sei sicuro di voler fare un reset completo?")) {
       cb();
     }
   }
@@ -48,20 +48,20 @@ const findBibCategory = memoize((bibs, bib) => {
     }
   });
   if (!found) {
-    console.log('#' + bib + ': CATEGORIA MANCANTE (ignorato)');
+    console.log("#" + bib + ": CATEGORIA MANCANTE (ignorato)");
   }
   return found;
 });
 
-const categoryAddBib = (category, bib) => (state) => {
+const categoryAddBib = (category, bib) => state => {
   if (state.bibs[category].indexOf(bib) !== -1) {
-    alert('Il concorrente è già in griglia');
+    alert("Il concorrente è già in griglia");
     return state;
   }
   return merge(state, {
     bibs: {
-      [category]: [].concat(state.bibs[category] || [], bib)
-    }
+      [category]: [].concat(state.bibs[category] || [], bib),
+    },
   });
 };
 
@@ -70,19 +70,19 @@ const categoryChangeBib = (category, lapNum0, index, nextValue) => state => {
   const nextBibs = [
     ...oldBibs.slice(0, index),
     nextValue,
-    ...oldBibs.slice(index + 1)
+    ...oldBibs.slice(index + 1),
   ];
   return merge(state, {
     bibs: {
-      [category]: nextBibs
-    }
+      [category]: nextBibs,
+    },
   });
-}
+};
 
 const resetCrono = state => {
   return {
     chrono: [],
-    tempi: []
+    tempi: [],
   };
 };
 
@@ -94,32 +94,32 @@ const addBib = bib => state => {
     chrono: [].concat(state.chrono, bib),
     tempi: [].concat(state.tempi, Date.now()),
   };
-}
+};
 
 const removeLastBib = bib => state => {
   if (state.chrono.lastIndexOf(bib) === -1) {
-    alert('Non posso eliminare l\'ultimo giro perché non esiste: ' + bib);
+    alert("Non posso eliminare l'ultimo giro perché non esiste: " + bib);
     return;
   }
   const removingIndex = state.chrono.lastIndexOf(bib);
   return {
     chrono: [
       ...state.chrono.slice(0, removingIndex),
-      ...state.chrono.slice(removingIndex + 1)
+      ...state.chrono.slice(removingIndex + 1),
     ],
     tempi: [
       ...state.tempi.slice(0, removingIndex),
-      ...state.tempi.slice(removingIndex + 1)
-    ]
+      ...state.tempi.slice(removingIndex + 1),
+    ],
   };
-}
+};
 
 const fixupLastBib = bib => state => {
   if (state.chrono.lastIndexOf(bib) === -1) {
-    alert('Non posso correggere l\'ultimo giro perché non esiste: ' + bib);
+    alert("Non posso correggere l'ultimo giro perché non esiste: " + bib);
     return;
   }
-  const next = Number(prompt('Sostituire con?'));
+  const next = Number(prompt("Sostituire con?"));
   if (!next) {
     return state;
   }
@@ -128,30 +128,34 @@ const fixupLastBib = bib => state => {
     chrono: [
       ...state.chrono.slice(0, updatingBib),
       next,
-      ...state.chrono.slice(updatingBib + 1)
-    ]
+      ...state.chrono.slice(updatingBib + 1),
+    ],
   };
-}
+};
 
 const insertBibTime = index => state => {
   const insertNew = (() => {
-    if (confirm('Inserisci un nuovo concorrente? (annulla per sostituire)')) {
+    if (confirm("Inserisci un nuovo concorrente? (annulla per sostituire)")) {
       return true;
     }
     return false;
   })();
-  const bib = Number(prompt('PETTORALE?', insertNew ? '' : state.chrono[index]));
+  const bib = Number(
+    prompt("PETTORALE?", insertNew ? "" : state.chrono[index])
+  );
   if (!bib) {
     return state;
   }
-  const suggestedTime = state.tempi[index] ? moment(state.tempi[index]).format('HHmmss.SSS') : '';
-  const time = prompt('TEMPO? (hhmmss.dcm)', suggestedTime);
+  const suggestedTime = state.tempi[index]
+    ? moment(state.tempi[index]).format("HHmmss.SSS")
+    : "";
+  const time = prompt("TEMPO? (hhmmss.dcm)", suggestedTime);
   if (!time) {
     return state;
   }
-  const parsedTime = moment(time, 'HHmmss.SSS').valueOf();
+  const parsedTime = moment(time, "HHmmss.SSS").valueOf();
   if (!parsedTime) {
-    alert('Errore: formato ora non valido, usa hhmmss.dcm');
+    alert("Errore: formato ora non valido, usa hhmmss.dcm");
     insertBibTime(index)(state);
     return;
   }
@@ -169,47 +173,54 @@ const insertBibTime = index => state => {
     chrono: [
       ...state.chrono.slice(0, index),
       bib,
-      ...state.chrono.slice(index + (insertNew ? 0 : 1))
+      ...state.chrono.slice(index + (insertNew ? 0 : 1)),
     ],
     tempi: [
       ...state.tempi.slice(0, index),
       parsedTime,
-      ...state.tempi.slice(index + (insertNew ? 0 : 1))
-    ]
+      ...state.tempi.slice(index + (insertNew ? 0 : 1)),
+    ],
   };
-}
+};
 
-const formatTempo = memoize(t => moment(t).format('HH:mm:ss,SSS'));
+const formatTempo = memoize(t => moment(t).format("HH:mm:ss,SSS"));
 const pad4 = b => {
   let str;
-  if (b >= 1000) { str = '' + b; }
-  else if (b >= 100) { str = '0' + b; }
-  else if (b >= 10) { str = '00' + b; }
-  else { str = '000' + b };
+  if (b >= 1000) {
+    str = "" + b;
+  } else if (b >= 100) {
+    str = "0" + b;
+  } else if (b >= 10) {
+    str = "00" + b;
+  } else {
+    str = "000" + b;
+  }
   return str;
 };
 
 const chronoTable = memoize((bibsList, tempi) => {
   const bibsStr = bibsList.map((b, index) => {
     let str;
-    if (b >= 100) { str = '' + b; }
-    else if (b >= 10) { str = ' ' + b; }
-    else { str = '  ' + b };
+    if (b >= 100) {
+      str = "" + b;
+    } else if (b >= 10) {
+      str = " " + b;
+    } else {
+      str = "  " + b;
+    }
     const tempo = formatTempo(tempi[index]);
-    return [ str, tempo, index ];
+    return [str, tempo, index];
   });
   const matRC = chunk(bibsStr, 10);
   const matCR = zip(...matRC);
   return matCR;
 });
 
-
 const getCategories = memoize(bibs => Object.keys(bibs));
 
 const getChronoByCat = memoize((chrono, bibs) => {
   return groupBy(chrono, bib => findBibCategory(bibs, bib));
 });
-
 
 class App extends Component {
   constructor(props) {
@@ -218,7 +229,9 @@ class App extends Component {
     this.handleCategoryAddBib = this.handleCategoryAddBib.bind(this);
     this.persistState = this.persistState.bind(this);
     this.handleSetCategories = this.handleSetCategories.bind(this);
-    this.handleSetCategoriesFromList = this.handleSetCategoriesFromList.bind(this);
+    this.handleSetCategoriesFromList = this.handleSetCategoriesFromList.bind(
+      this
+    );
     this.handleBibEvent = this.handleBibEvent.bind(this);
     this.handleBackupDownload = this.handleBackupDownload.bind(this);
     this.handleBackupUpload = this.handleBackupUpload.bind(this);
@@ -227,7 +240,8 @@ class App extends Component {
   }
 
   scrollChrono() {
-    findDOMNode(this.scrollingArea).scrollLeft = Number.MAX_SAFE_INTEGER - Math.random();
+    findDOMNode(this.scrollingArea).scrollLeft =
+      Number.MAX_SAFE_INTEGER - Math.random();
   }
 
   componentDidMount() {
@@ -240,7 +254,7 @@ class App extends Component {
   }
 
   persistState() {
-    window.localStorage.setItem('state', JSON.stringify(this.state));
+    window.localStorage.setItem("state", JSON.stringify(this.state));
   }
 
   handleCategoryAddBib(e) {
@@ -248,7 +262,7 @@ class App extends Component {
       return;
     }
     const bib = Number(e.target.value);
-    e.target.value = '';
+    e.target.value = "";
     const category = findBibCategory(this.state.bibs, bib);
     if (category === false) {
       return;
@@ -257,29 +271,35 @@ class App extends Component {
   }
 
   handleBibEvent(e) {
-    if (e.nativeEvent.keyCode !== 13 &&
-        e.nativeEvent.keyCode !== 109 &&
-        e.nativeEvent.keyCode !== 189 &&
-        e.nativeEvent.keyCode !== 106 &&
-        !(e.nativeEvent.keyCode === 187 && e.nativeEvent.shiftKey)
+    if (
+      e.nativeEvent.keyCode !== 13 &&
+      e.nativeEvent.keyCode !== 109 &&
+      e.nativeEvent.keyCode !== 189 &&
+      e.nativeEvent.keyCode !== 106 &&
+      !(e.nativeEvent.keyCode === 187 && e.nativeEvent.shiftKey)
     ) {
       return;
     }
     let bib = Number(e.target.value);
-    e.target.value = '';
+    e.target.value = "";
 
-    if (e.nativeEvent.keyCode === 109 || // minus from keypad
-        e.nativeEvent.keyCode === 189) { // dash
+    if (
+      e.nativeEvent.keyCode === 109 || // minus from keypad
+      e.nativeEvent.keyCode === 189
+    ) {
+      // dash
       // subtract
-      this.setState(removeLastBib(bib))
+      this.setState(removeLastBib(bib));
       e.preventDefault();
       return;
     }
 
-    if (e.nativeEvent.keyCode === 106 ||
-        (e.nativeEvent.keyCode === 187 && e.nativeEvent.shiftKey)) {
+    if (
+      e.nativeEvent.keyCode === 106 ||
+      (e.nativeEvent.keyCode === 187 && e.nativeEvent.shiftKey)
+    ) {
       // multiply
-      this.setState(fixupLastBib(bib))
+      this.setState(fixupLastBib(bib));
       e.preventDefault();
       return;
     }
@@ -291,7 +311,7 @@ class App extends Component {
     // if (!findBibCategory(this.state.bibs, bib)) {
     // maybe display category somewhere
     // }
-    this.setState(addBib(bib))
+    this.setState(addBib(bib));
   }
 
   handleSetCategories(e) {
@@ -300,7 +320,9 @@ class App extends Component {
       return;
     }
     const currentCats = Object.keys(this.state.bibs);
-    const requestedCats = findDOMNode(this._catsList).value.split('\n').map(c => c.trim().split(/\t|\s{2,}/));
+    const requestedCats = findDOMNode(this._catsList)
+      .value.split("\n")
+      .map(c => c.trim().split(/\t|\s{2,}/));
     requestedCats.forEach(([cat, ...bibs]) => {
       if (!cat) {
         return;
@@ -309,19 +331,22 @@ class App extends Component {
         this.setState(state => ({
           bibs: {
             ...state.bibs,
-            [cat]: [...bibs].map(b => Number(b))
-          }
+            [cat]: [...bibs].map(b => Number(b)),
+          },
         }));
       }
-    })
+    });
   }
 
   handleSetCategoriesFromList(e) {
     e.preventDefault();
     const acc = {};
-    const requestedCats = findDOMNode(this._catsListConc).value.split('\n').map(c => c.trim().split('\t'));
+    const requestedCats = findDOMNode(this._catsListConc)
+      .value.split("\n")
+      .map(c => c.trim().split("\t"));
     requestedCats.forEach(([pett, cat]) => {
-      if (isNaN(pett)) { // cast to Number
+      if (isNaN(pett)) {
+        // cast to Number
         return;
       }
       if (!pett || !cat) {
@@ -332,21 +357,22 @@ class App extends Component {
       }
       acc[cat].push(pett);
     });
-    findDOMNode(this._catsList).value = Object.keys(acc).map(catName => {
-      return [
-        catName,
-        ...acc[catName]
-      ].join('\t');
-    }).join('\n');
+    findDOMNode(this._catsList).value = Object.keys(acc)
+      .map(catName => {
+        return [catName, ...acc[catName]].join("\t");
+      })
+      .join("\n");
     this.handleSetCategories(e);
   }
 
   handleBackupDownload(e) {
     e.preventDefault();
-    const a = document.createElement('a');
-    const blob = new Blob([JSON.stringify(this.state)], {'type':'application/json'});
+    const a = document.createElement("a");
+    const blob = new Blob([JSON.stringify(this.state)], {
+      type: "application/json",
+    });
     a.href = window.URL.createObjectURL(blob);
-    a.download = 'backup-' + Date.now() + '.json';
+    a.download = "backup-" + Date.now() + ".json";
     a.click();
   }
 
@@ -362,7 +388,10 @@ class App extends Component {
   handleClassifyDownload(e) {
     e.preventDefault();
 
-    const prefisso = prompt("Prefisso chip? (2 lettere + 1 numero)", window.localStorage.prefisso || "VG0");
+    const prefisso = prompt(
+      "Prefisso chip? (2 lettere + 1 numero)",
+      window.localStorage.prefisso || "VG0"
+    );
     if (!prefisso) {
       return;
     }
@@ -380,10 +409,10 @@ class App extends Component {
     });
 
     const header = ["LAP", "TOTAL", "TAG", "#", "NAME", "AGE GROUP"];
-    for (let i = 1; i <= maxLaps; i++) { header.push("LAP " + i); }
-    const rows = [
-      header
-    ];
+    for (let i = 1; i <= maxLaps; i++) {
+      header.push("LAP " + i);
+    }
+    const rows = [header];
     Object.keys(obj).map(bib => {
       const tempi = obj[bib];
       const row = [
@@ -393,17 +422,17 @@ class App extends Component {
         bib,
         ",",
         findBibCategory(this.state.bibs, Number(bib)),
-        ...tempi
+        ...tempi,
       ];
       rows.push(row);
     });
 
     const str = rows.map(r => r.join(";")).join("\n");
 
-    const a = document.createElement('a');
-    const blob = new Blob([str], {'type':'text/csv'});
+    const a = document.createElement("a");
+    const blob = new Blob([str], { type: "text/csv" });
     a.href = window.URL.createObjectURL(blob);
-    a.download = 'classify-' + Date.now() + '.csv';
+    a.download = "classify-" + Date.now() + ".csv";
     a.click();
   }
 
@@ -415,44 +444,77 @@ class App extends Component {
       <div className="App">
         <div className="App-header">
           <h2>
-            Numero:{' '}
-            <input type="number" defaultValue="" onKeyDown={e => { this.handleBibEvent(e); this.scrollChrono(); }} /><br />
+            Numero:{" "}
+            <input
+              type="number"
+              defaultValue=""
+              onKeyDown={e => {
+                this.handleBibEvent(e);
+                this.scrollChrono();
+              }}
+            />
+            <br />
             <small>↵ aggiunge, - rimuove u.g., * corregge u.g.</small>
           </h2>
         </div>
 
-        <div className="header-spacer"></div>
+        <div className="header-spacer" />
 
-        <div className="chrono" style={{ width: window.innerWidth - 50, overflowX: "scroll" }} ref={_ref => this.scrollingArea = _ref}>
+        <div
+          className="chrono"
+          style={{ width: window.innerWidth - 50, overflowX: "scroll" }}
+          ref={_ref => (this.scrollingArea = _ref)}
+        >
           <table className="table" style={{ maxWidth: "100%" }}>
             <tbody>
-              {chrono.map((row, rowIndex) =>
+              {chrono.map((row, rowIndex) => (
                 <tr key={rowIndex}>
-                  {row.map((cell, cellIndex) =>
-                    cell && <td
-                      key={cell[0] + '-' + cellIndex}
-                      className="chrono-td"
-                      style={{ fontFamily: "monospace", textAlign: "right", minWidth: 220 }}
-                    >
-                              <strong
-                                onClick={e => this.setState(insertBibTime(cell[2]))}
-                                style={{
-                                  cursor: "pointer",
-                                  backgroundColor: findBibCategory(this.state.bibs, Number(cell[0])) ? '' : 'red'
-                                }}
-                              >{cell[0]}</strong>{' '}
-                              <span
-                                style={{
-                                  color: "blue",
-                                  backgroundColor: (this.state.tempi[cell[2]] < this.state.tempi[cell[2] - 1] || this.state.tempi[cell[2]] > this.state.tempi[cell[2] + 1]) ? 'red' : ''
-                                }}
-                              >{cell[1]}</span>
-                              &nbsp;
-                              &nbsp;
-                            </td>
+                  {row.map(
+                    (cell, cellIndex) =>
+                      cell && (
+                        <td
+                          key={cell[0] + "-" + cellIndex}
+                          className="chrono-td"
+                          style={{
+                            fontFamily: "monospace",
+                            textAlign: "right",
+                            minWidth: 220,
+                          }}
+                        >
+                          <strong
+                            onClick={e => this.setState(insertBibTime(cell[2]))}
+                            style={{
+                              cursor: "pointer",
+                              backgroundColor: findBibCategory(
+                                this.state.bibs,
+                                Number(cell[0])
+                              )
+                                ? ""
+                                : "red",
+                            }}
+                          >
+                            {cell[0]}
+                          </strong>{" "}
+                          <span
+                            style={{
+                              color: "blue",
+                              backgroundColor:
+                                this.state.tempi[cell[2]] <
+                                  this.state.tempi[cell[2] - 1] ||
+                                this.state.tempi[cell[2]] >
+                                  this.state.tempi[cell[2] + 1]
+                                  ? "red"
+                                  : "",
+                            }}
+                          >
+                            {cell[1]}
+                          </span>
+                          &nbsp; &nbsp;
+                        </td>
+                      )
                   )}
                 </tr>
-              )}
+              ))}
             </tbody>
           </table>
         </div>
@@ -464,84 +526,102 @@ class App extends Component {
         </div>
 
         <div className="float-container">
-          {categories.map(cat =>
+          {categories.map(cat => (
             <Column
               key={cat}
               category={cat}
               onCategoryAddBib={bib => this.setState(categoryAddBib(cat, bib))}
-              onChangeBib={(lapNum0, index, bib) => this.setState(categoryChangeBib(cat, lapNum0, index, bib))}
+              onChangeBib={(lapNum0, index, bib) =>
+                this.setState(categoryChangeBib(cat, lapNum0, index, bib))
+              }
               bibs={[].concat(this.state.bibs[cat], chronoByCat[cat])}
             />
-          )}
+          ))}
         </div>
 
         <h2>Configurazione</h2>
         <p>
-          Prima di iniziare la gara, crea oppure importa le categorie da Excel seguendo
-          le istruzioni qui sotto.
+          Prima di iniziare la gara, crea oppure importa le categorie da Excel
+          seguendo le istruzioni qui sotto.
         </p>
 
         <div className="categories-input pure-g">
-          
           <div className="pure-u-1-3">
             <h3>Crea categorie</h3>
             (una per riga; altre colonne indicano la griglia)
             <br />
             <textarea
               className="categories-input"
-              defaultValue={Object.keys(this.state.bibs).join('\n')}
-              ref={el => this._catsList = el}
+              defaultValue={Object.keys(this.state.bibs).join("\n")}
+              ref={el => (this._catsList = el)}
             />
             <button type="submit" onClick={this.handleSetCategories}>
               Aggiorna categorie
             </button>
           </div>
-          
+
           <div className="pure-u-1-3">
             <h3>Importa categorie</h3>
-            (incolla un Excel: un concorrente per riga, nella prima colonna il pettorale, nella seconda la categoria; la prima riga viene saltata se non inizia con un pettorale)
+            (incolla un Excel: un concorrente per riga, nella prima colonna il
+            pettorale, nella seconda la categoria; la prima riga viene saltata
+            se non inizia con un pettorale)
             <br />
             <textarea
               className="categories-input"
               defaultValue=""
-              ref={el => this._catsListConc = el}
+              ref={el => (this._catsListConc = el)}
             />
             <button type="submit" onClick={this.handleSetCategoriesFromList}>
               Importa categorie
             </button>
           </div>
 
-
           <div className="pure-u-1-3">
             <h3>Gestione gara</h3>
-
-            <p>Contagiri versione: 2017-05-31 2339</p>
-
-            <strong>Scarica:</strong><br />
+            <p>Contagiri versione: 2018-04-16</p>
+            <strong>Scarica:</strong>
+            <br />
             <button type="submit" onClick={this.handleBackupDownload}>
               Download backup (JSON)
             </button>
             <br />
-            <button type="submit" onClick={this.handleClassifyDownload} style={{ color: 'blue' }}>
+            <button
+              type="submit"
+              onClick={this.handleClassifyDownload}
+              style={{ color: "blue" }}
+            >
               Download CSV-;
             </button>
             <br />
             <br />
-
-            <strong>Carica backup (JSON):</strong><br />
+            <strong>Carica backup (JSON):</strong>
+            <br />
             <input type="file" onChange={this.handleBackupUpload} />
             <br />
             <br />
-
             <br />
             <br />
-            <strong>Area pericolosa:</strong>{' '}
+            <strong>Area pericolosa:</strong> <br />
+            <button
+              type="reset"
+              onClick={e => {
+                this.handleBackupDownload(e);
+                resetAll();
+              }}
+            >
+              Cancella dati
+            </button>
             <br />
-            <button type="reset" onClick={e => { this.handleBackupDownload(e); resetAll(); }}>Cancella dati</button>
-            <br />
-            <button type="reset" onClick={e => { this.handleBackupDownload(e); doubleConfirm(() => this.setState(resetCrono))}}>Cancella cronologico e tempi</button>
+            <button
+              type="reset"
+              onClick={e => {
+                this.handleBackupDownload(e);
+                doubleConfirm(() => this.setState(resetCrono));
+              }}
+            >
+              Cancella cronologico e tempi
+            </button>
           </div>
-
         </div>
       </div>
     );
