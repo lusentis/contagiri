@@ -97,6 +97,9 @@ const addBib = bib => state => {
 };
 
 const removeLastBib = bib => state => {
+  if (!bib) {
+    bib = 9999;
+  }
   if (state.chrono.lastIndexOf(bib) === -1) {
     alert("Non posso eliminare l'ultimo giro perché non esiste: " + bib);
     return;
@@ -115,6 +118,9 @@ const removeLastBib = bib => state => {
 };
 
 const fixupLastBib = bib => state => {
+  if (!bib) {
+    bib = 9999;
+  }
   if (state.chrono.lastIndexOf(bib) === -1) {
     alert("Non posso correggere l'ultimo giro perché non esiste: " + bib);
     return;
@@ -129,6 +135,44 @@ const fixupLastBib = bib => state => {
       ...state.chrono.slice(0, updatingBib),
       next,
       ...state.chrono.slice(updatingBib + 1),
+    ],
+  };
+};
+
+const moveUpBib = bib => state => {
+  if (!bib) {
+    bib = 9999;
+  }
+  const updatingBibIndex = state.chrono.lastIndexOf(bib);
+  const prevBibIndex = updatingBibIndex - 1;
+
+  if (updatingBibIndex === -1) {
+    alert("Non posso scambiare perché non esiste: " + bib);
+    return;
+  }
+
+  if (!prevBibIndex) {
+    return state;
+  }
+
+  return {
+    chrono: [
+      ...state.chrono.slice(0, updatingBibIndex - 1),
+      state.chrono[updatingBibIndex],
+      state.chrono[updatingBibIndex - 1],
+      ...state.chrono.slice(updatingBibIndex + 1),
+    ],
+  };
+};
+
+const swapLastBibs = () => state => {
+  const lastBib = state.chrono[state.chrono.length - 1];
+  const prevBib = state.chrono[state.chrono.length - 2];
+  return {
+    chrono: [
+      ...state.chrono.slice(0, state.chrono.length - 2),
+      lastBib,
+      prevBib,
     ],
   };
 };
@@ -276,7 +320,9 @@ class App extends Component {
       e.nativeEvent.keyCode !== 109 &&
       e.nativeEvent.keyCode !== 189 &&
       e.nativeEvent.keyCode !== 106 &&
-      !(e.nativeEvent.keyCode === 187 && e.nativeEvent.shiftKey)
+      !(e.nativeEvent.keyCode === 187 && e.nativeEvent.shiftKey) &&
+      e.nativeEvent.keyCode !== 83 &&
+      e.nativeEvent.keyCode !== 88
     ) {
       return;
     }
@@ -300,6 +346,18 @@ class App extends Component {
     ) {
       // multiply
       this.setState(fixupLastBib(bib));
+      e.preventDefault();
+      return;
+    }
+
+    if (e.nativeEvent.keyCode === 88) {
+      this.setState(swapLastBibs());
+      e.preventDefault();
+      return;
+    }
+
+    if (e.nativeEvent.keyCode === 83) {
+      this.setState(moveUpBib(bib));
       e.preventDefault();
       return;
     }
@@ -454,7 +512,10 @@ class App extends Component {
               }}
             />
             <br />
-            <small>↵ aggiunge, - rimuove u.g., * corregge u.g.</small>
+            <small>
+              ↵ aggiunge, - rimuove u.g., * corregge u.g., "s" sposta su, "x"
+              scambia ultimi due arrivi
+            </small>
           </h2>
         </div>
 
