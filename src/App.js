@@ -179,7 +179,11 @@ const swapLastBibs = () => state => {
 
 const insertBibTime = index => state => {
   const insertNew = (() => {
-    if (confirm("Inserisci un nuovo concorrente? (annulla per sostituire)")) {
+    if (
+      confirm(
+        "Premi OK per COPIARE questo tempo.\nPremi ANNULLA per MODIFICARE."
+      )
+    ) {
       return true;
     }
     return false;
@@ -224,6 +228,14 @@ const insertBibTime = index => state => {
       parsedTime,
       ...state.tempi.slice(index + (insertNew ? 0 : 1)),
     ],
+  };
+};
+
+const highlightBib = bib => state => {
+  const highlight = bib;
+  return {
+    ...state,
+    highlight,
   };
 };
 
@@ -315,6 +327,8 @@ class App extends Component {
   }
 
   handleBibEvent(e) {
+    let bib = Number(e.target.value);
+
     if (
       e.nativeEvent.keyCode !== 13 &&
       e.nativeEvent.keyCode !== 109 &&
@@ -322,11 +336,12 @@ class App extends Component {
       e.nativeEvent.keyCode !== 106 &&
       !(e.nativeEvent.keyCode === 187 && e.nativeEvent.shiftKey) &&
       e.nativeEvent.keyCode !== 83 &&
-      e.nativeEvent.keyCode !== 88
+      e.nativeEvent.keyCode !== 88 &&
+      !(e.nativeEvent.keyCode === 219 && e.nativeEvent.shiftKey)
     ) {
       return;
     }
-    let bib = Number(e.target.value);
+
     e.target.value = "";
 
     if (
@@ -358,6 +373,12 @@ class App extends Component {
 
     if (e.nativeEvent.keyCode === 83) {
       this.setState(moveUpBib(bib));
+      e.preventDefault();
+      return;
+    }
+
+    if (e.nativeEvent.keyCode === 219 && e.nativeEvent.shiftKey) {
+      this.setState(highlightBib(bib));
       e.preventDefault();
       return;
     }
@@ -495,6 +516,7 @@ class App extends Component {
   }
 
   render() {
+    const highlight = this.state.highlight;
     const categories = getCategories(this.state.bibs);
     const chrono = chronoTable(this.state.chrono, this.state.tempi);
     const chronoByCat = getChronoByCat(this.state.chrono, this.state.bibs);
@@ -513,8 +535,8 @@ class App extends Component {
             />
             <br />
             <small>
-              ↵ aggiunge, - rimuove u.g., * corregge u.g., "s" sposta su, "x"
-              scambia ultimi due arrivi
+              ↵ aggiunge, - rimuove u.g., * corregge u.g., "s" sposta su, "?"
+              trova, "x" scambia ultimi due arrivi
             </small>
           </h2>
         </div>
@@ -537,14 +559,25 @@ class App extends Component {
                           key={cell[0] + "-" + cellIndex}
                           className="chrono-td"
                           style={{
+                            verticalAlign: "middle",
                             fontFamily: "monospace",
                             textAlign: "right",
                             minWidth: 220,
+                            backgroundColor:
+                              Number(cell[0]) === highlight
+                                ? "orange"
+                                : undefined,
                           }}
                         >
+                          <em style={{ color: "#444", fontSize: "0.7em" }}>
+                            {cellIndex * 10 + rowIndex + 1}
+                          </em>{" "}
                           <strong
                             onClick={e => this.setState(insertBibTime(cell[2]))}
                             style={{
+                              display: "inline-block",
+                              width: 35,
+                              textAlign: "right",
                               cursor: "pointer",
                               backgroundColor: findBibCategory(
                                 this.state.bibs,
@@ -581,8 +614,27 @@ class App extends Component {
         </div>
 
         <div>
-          <p style={{ fontWeight: "bold", color: "blue" }}>
-            {this.state.tempi.length} passaggi
+          <p>
+            <span style={{ fontWeight: "bold", color: "blue" }}>
+              {this.state.tempi.length} passaggi
+            </span>
+            <br />
+            {highlight ? (
+              <span style={{ fontWeight: "bold", color: "orange" }}>
+                {highlight} in posizione:{" "}
+                {this.state.chrono
+                  .map(
+                    (b, i) =>
+                      b === highlight
+                        ? `${i + 1}° (${formatTempo(this.state.tempi[i])})`
+                        : false
+                  )
+                  .filter(Boolean)
+                  .join(", ")}
+              </span>
+            ) : (
+              <span />
+            )}
           </p>
         </div>
 
