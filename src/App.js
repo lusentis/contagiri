@@ -83,6 +83,8 @@ const resetCrono = state => {
   return {
     chrono: [],
     tempi: [],
+    categoryFilter: [],
+    lastBib: [],
   };
 };
 
@@ -90,15 +92,24 @@ const addBib = bib => state => {
   if (bib === 0 || Number(bib) === 0) {
     return;
   }
+  let categoryFilter = "";
+  if (!state.alwaysShowAllCategories) {
+    categoryFilter = findBibCategory(state.bibs, bib);
+  }
   return {
     chrono: [].concat(state.chrono, bib),
     tempi: [].concat(state.tempi, Date.now()),
+    categoryFilter,
+    lastBib: bib,
   };
 };
 
 const removeLastBib = bib => state => {
   if (!bib) {
     bib = 9999;
+  }
+  if (!confirm(`Rimuovo l'ultimo giro del n.${bib}?`)) {
+    return;
   }
   if (state.chrono.lastIndexOf(bib) === -1) {
     alert("Non posso eliminare l'ultimo giro perché non esiste: " + bib);
@@ -117,6 +128,24 @@ const removeLastBib = bib => state => {
   };
 };
 
+const removeLatest = () => state => {
+  if (!confirm(`Rimuovo l'ultimo tempo registrato?`)) {
+    return;
+  }
+  const removingIndex = state.chrono.length - 1;
+  return {
+    chrono: [
+      ...state.chrono.slice(0, removingIndex),
+      9999,
+      ...state.chrono.slice(removingIndex + 1),
+    ],
+    tempi: [
+      ...state.tempi.slice(0, removingIndex),
+      ...state.tempi.slice(removingIndex + 1),
+    ],
+  };
+};
+
 const fixupLastBib = bib => state => {
   if (!bib) {
     bib = 9999;
@@ -125,7 +154,7 @@ const fixupLastBib = bib => state => {
     alert("Non posso correggere l'ultimo giro perché non esiste: " + bib);
     return;
   }
-  const next = Number(prompt("Sostituire con?"));
+  const next = Number(prompt("Sostituire con?", bib));
   if (!next) {
     return state;
   }
@@ -233,9 +262,12 @@ const insertBibTime = index => state => {
 
 const highlightBib = bib => state => {
   const highlight = bib;
+  const categoryFilter = findBibCategory(state.bibs, bib);
   return {
     ...state,
     highlight,
+    lastBib: highlight,
+    categoryFilter,
   };
 };
 
@@ -278,6 +310,26 @@ const getChronoByCat = memoize((chrono, bibs) => {
   return groupBy(chrono, bib => findBibCategory(bibs, bib));
 });
 
+const shouldShowCategoryRanking = (state, cat) => {
+  if (!state.categoryFilter) {
+    return true;
+  }
+  return state.categoryFilter === cat;
+};
+
+document.addEventListener("keydown", e => {
+  const bibInput = document.getElementById("bibGlobalInput");
+  if (bibInput) {
+    if (
+      e.target instanceof HTMLInputElement ||
+      e.target instanceof HTMLTextAreaElement
+    ) {
+      return;
+    }
+    bibInput.focus();
+  }
+});
+
 class App extends Component {
   constructor(props) {
     super(props);
@@ -302,11 +354,16 @@ class App extends Component {
 
   componentDidMount() {
     this._persistInterval = setInterval(this.persistState, 500);
+    this._backupInterval = setInterval(
+      this.handleBackupDownload,
+      2 * 60 * 1000
+    );
     this.scrollChrono();
   }
 
   componentWillUnmount() {
     this.clearInterval(this._persistInterval);
+    this.clearInterval(this._backupInterval);
   }
 
   persistState() {
@@ -337,6 +394,8 @@ class App extends Component {
       !(e.nativeEvent.keyCode === 187 && e.nativeEvent.shiftKey) &&
       e.nativeEvent.keyCode !== 83 &&
       e.nativeEvent.keyCode !== 88 &&
+      e.nativeEvent.keyCode !== 32 &&
+      e.nativeEvent.keyCode !== 46 &&
       !(e.nativeEvent.keyCode === 219 && e.nativeEvent.shiftKey)
     ) {
       return;
@@ -383,6 +442,21 @@ class App extends Component {
       return;
     }
 
+    if (e.nativeEvent.keyCode === 32) {
+      this.setState(
+        e => ({ showChrono: !this.state.showChrono }),
+        () => this.scrollChrono()
+      );
+
+      e.preventDefault();
+      return;
+    }
+    if (e.nativeEvent.keyCode === 46) {
+      this.setState(removeLatest());
+      e.preventDefault();
+      return;
+    }
+
     if (!bib) {
       bib = 9999;
     }
@@ -391,6 +465,9 @@ class App extends Component {
     // maybe display category somewhere
     // }
     this.setState(addBib(bib));
+    if (this.state.autoHighlightLastBib) {
+      this.setState(highlightBib(bib));
+    }
   }
 
   handleSetCategories(e) {
@@ -445,7 +522,9 @@ class App extends Component {
   }
 
   handleBackupDownload(e) {
-    e.preventDefault();
+    if (e) {
+      e.preventDefault();
+    }
     const a = document.createElement("a");
     const blob = new Blob([JSON.stringify(this.state)], {
       type: "application/json",
@@ -520,98 +599,291 @@ class App extends Component {
     const categories = getCategories(this.state.bibs);
     const chrono = chronoTable(this.state.chrono, this.state.tempi);
     const chronoByCat = getChronoByCat(this.state.chrono, this.state.bibs);
+    chronoByCat["ASSOLUTA"] = this.state.chrono;
+
+    let contaGiri = -1;
+    let lastPos = 0;
+    let lastTime = 0;
+    const highlighted = this.state.chrono
+      .map((b, i) => {
+        if (b !== highlight) {
+          return false;
+        }
+
+        const tempo = this.state.tempi[i - 1];
+
+        const posDiff = i + 1 - lastPos;
+        const timeDiff = tempo - lastTime - 60 * 60 * 1000; // @BUG no idea why here we have 1h offset...
+        lastPos = i + 1;
+        lastTime = tempo;
+        contaGiri++;
+
+        return (
+          <div className="pure-u-1-8" style={{ marginTop: 8 }}>
+            <strong>{i + 1}°</strong> {formatTempo(tempo)}
+            <br />
+            {contaGiri !== 0 && (
+              <em style={{ color: "brown" }}>
+                <small>
+                  +{posDiff}, giro: {formatTempo(timeDiff)}
+                </small>
+              </em>
+            )}
+          </div>
+        );
+      })
+      .filter(Boolean);
+
     return (
       <div className="App">
         <div className="App-header">
-          <h2>
-            Numero:{" "}
-            <input
-              type="number"
-              defaultValue=""
-              onKeyDown={e => {
-                this.handleBibEvent(e);
-                this.scrollChrono();
-              }}
-            />
-            <br />
-            <small>
-              ↵ aggiunge, - rimuove u.g., * corregge u.g., "s" sposta su, "?"
-              trova, "x" scambia ultimi due arrivi
-            </small>
-          </h2>
+          <div className="pure-g">
+            <div className="pure-u-1-6">&nbsp;</div>
+            <div className="pure-u-2-3">
+              <h2>
+                Numero:{" "}
+                <input
+                  id="bibGlobalInput"
+                  type="number"
+                  defaultValue=""
+                  onKeyDown={e => {
+                    this.handleBibEvent(e);
+                    setTimeout(() => this.scrollChrono(), 1000);
+                  }}
+                />
+              </h2>
+              <div className="top-actions-container">
+                <button
+                  type="reset"
+                  onClick={() =>
+                    this.setState(e => ({ showConfig: !this.state.showConfig }))
+                  }
+                  style={{
+                    backgroundColor: this.state.showConfig ? "green" : "gray",
+                  }}
+                >
+                  Configurazione
+                </button>
+                <button
+                  type="reset"
+                  onClick={() =>
+                    this.setState(e => ({ showChrono: !this.state.showChrono }))
+                  }
+                  style={{
+                    backgroundColor: this.state.showChrono ? "green" : "gray",
+                  }}
+                >
+                  Cronologico
+                </button>
+                <button
+                  type="reset"
+                  onClick={() =>
+                    this.setState(e => ({
+                      autoHighlightLastBib: !this.state.autoHighlightLastBib,
+                    }))
+                  }
+                  style={{
+                    backgroundColor: this.state.autoHighlightLastBib
+                      ? "green"
+                      : "gray",
+                  }}
+                >
+                  Trova autom.
+                </button>
+                <button
+                  type="reset"
+                  onClick={() => this.setState(e => ({ categoryFilter: null }))}
+                >
+                  Mostra tutte cat.
+                </button>
+                <button
+                  type="reset"
+                  onClick={() =>
+                    this.setState(e => ({
+                      alwaysShowAllCategories: !this.state
+                        .alwaysShowAllCategories,
+                    }))
+                  }
+                  style={{
+                    backgroundColor: this.state.alwaysShowAllCategories
+                      ? "gray"
+                      : "green",
+                  }}
+                >
+                  Selez. auto cat.
+                </button>
+
+                <small>
+                  (solo ultimi{" "}
+                  <input
+                    type="number"
+                    value={this.state.showCategoryRankingFromLapNum || 0}
+                    onChange={e =>
+                      this.setState({
+                        showCategoryRankingFromLapNum: Number(e.target.value),
+                      })
+                    }
+                    style={{
+                      width: 20,
+                    }}
+                  />{" "}
+                  giri{" "}
+                  <button
+                    type="reset"
+                    onClick={() =>
+                      this.setState(e => ({
+                        showCategoryRankingFromLapNum:
+                          this.state.showCategoryRankingFromLapNum - 1,
+                      }))
+                    }
+                  >
+                    -
+                  </button>
+                  <button
+                    type="reset"
+                    onClick={() =>
+                      this.setState(e => ({
+                        showCategoryRankingFromLapNum:
+                          this.state.showCategoryRankingFromLapNum + 1,
+                      }))
+                    }
+                  >
+                    +
+                  </button>)
+                </small>
+              </div>
+            </div>
+            <div className="pure-u-1-6 help-container">
+              <small>
+                <strong>Scorciatoie</strong>
+                <br />
+                <table className="help">
+                  <tbody>
+                    <tr>
+                      <th>
+                        <em>num</em> ↵
+                      </th>
+                      <td>aggiungi</td>
+                    </tr>
+                    <tr>
+                      <th>
+                        <em>num</em> -
+                      </th>
+                      <td>rimuovi u.g.</td>
+                    </tr>
+                    <tr>
+                      <th>
+                        <em>num</em> *
+                      </th>
+                      <td>correggi u.g.</td>
+                    </tr>
+                    <tr>
+                      <th>
+                        <em>num</em> s
+                      </th>
+                      <td>sposta su</td>
+                    </tr>
+                    <tr>
+                      <th>
+                        <em>num</em> ?
+                      </th>
+                      <td>trova</td>
+                    </tr>
+                    <tr>
+                      <th>canc</th>
+                      <td>canc ult. abb.</td>
+                    </tr>
+                    <tr>
+                      <th>x</th>
+                      <td>scambia ultimi 2</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </small>
+            </div>
+          </div>
         </div>
 
         <div className="header-spacer" />
 
-        <div
-          className="chrono"
-          style={{ width: window.innerWidth - 50, overflowX: "scroll" }}
-          ref={_ref => (this.scrollingArea = _ref)}
-        >
-          <table className="table" style={{ maxWidth: "100%" }}>
-            <tbody>
-              {chrono.map((row, rowIndex) => (
-                <tr key={rowIndex}>
-                  {row.map(
-                    (cell, cellIndex) =>
-                      cell && (
-                        <td
-                          key={cell[0] + "-" + cellIndex}
-                          className="chrono-td"
-                          style={{
-                            verticalAlign: "middle",
-                            fontFamily: "monospace",
-                            textAlign: "right",
-                            minWidth: 220,
-                            backgroundColor:
-                              Number(cell[0]) === highlight
-                                ? "orange"
-                                : undefined,
-                          }}
-                        >
-                          <em style={{ color: "#444", fontSize: "0.7em" }}>
-                            {cellIndex * 10 + rowIndex + 1}
-                          </em>{" "}
-                          <strong
-                            onClick={e => this.setState(insertBibTime(cell[2]))}
+        {this.state.showChrono && (
+          <div
+            className="chrono"
+            style={{ width: window.innerWidth - 50, overflowX: "scroll" }}
+            ref={_ref => (this.scrollingArea = _ref)}
+          >
+            <table className="table" style={{ maxWidth: "100%" }}>
+              <tbody>
+                {chrono.map((row, rowIndex) => (
+                  <tr key={rowIndex}>
+                    {row.map(
+                      (cell, cellIndex) =>
+                        cell && (
+                          <td
+                            key={cell[0] + "-" + cellIndex}
+                            className="chrono-td"
                             style={{
-                              display: "inline-block",
-                              width: 35,
+                              verticalAlign: "middle",
+                              fontFamily: "monospace",
                               textAlign: "right",
-                              cursor: "pointer",
-                              backgroundColor: findBibCategory(
-                                this.state.bibs,
-                                Number(cell[0])
-                              )
-                                ? ""
-                                : "red",
-                            }}
-                          >
-                            {cell[0]}
-                          </strong>{" "}
-                          <span
-                            style={{
-                              color: "blue",
+                              minWidth: 220,
                               backgroundColor:
-                                this.state.tempi[cell[2]] <
-                                  this.state.tempi[cell[2] - 1] ||
-                                this.state.tempi[cell[2]] >
-                                  this.state.tempi[cell[2] + 1]
-                                  ? "red"
-                                  : "",
+                                Number(cell[0]) === highlight
+                                  ? "orange"
+                                  : undefined,
                             }}
                           >
-                            {cell[1]}
-                          </span>
-                          &nbsp; &nbsp;
-                        </td>
-                      )
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                            <em style={{ color: "#444", fontSize: "0.7em" }}>
+                              {cellIndex * 10 + rowIndex + 1}
+                            </em>{" "}
+                            <strong
+                              onMouseOver={e =>
+                                this.setState(
+                                  highlightBib(Number(cell[0]))(this.state)
+                                )
+                              }
+                              onClick={e =>
+                                this.setState(insertBibTime(cell[2]))
+                              }
+                              style={{
+                                display: "inline-block",
+                                width: 35,
+                                textAlign: "right",
+                                cursor: "pointer",
+                                backgroundColor: findBibCategory(
+                                  this.state.bibs,
+                                  Number(cell[0])
+                                )
+                                  ? ""
+                                  : "red",
+                              }}
+                            >
+                              {cell[0]}
+                            </strong>{" "}
+                            <span
+                              style={{
+                                color: "blue",
+                                backgroundColor:
+                                  this.state.tempi[cell[2]] <
+                                    this.state.tempi[cell[2] - 1] ||
+                                  this.state.tempi[cell[2]] >
+                                    this.state.tempi[cell[2] + 1]
+                                    ? "red"
+                                    : "",
+                              }}
+                            >
+                              {cell[1]}
+                            </span>
+                            &nbsp; &nbsp;
+                          </td>
+                        )
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         <div>
           <p>
@@ -620,122 +892,121 @@ class App extends Component {
             </span>
             <br />
             {highlight ? (
-              <span style={{ fontWeight: "bold", color: "orange" }}>
-                {highlight} in posizione:{" "}
-                {this.state.chrono
-                  .map(
-                    (b, i) =>
-                      b === highlight
-                        ? `${i + 1}° (${formatTempo(this.state.tempi[i])})`
-                        : false
-                  )
-                  .filter(Boolean)
-                  .join(", ")}
-              </span>
+              <div style={{ color: "orange" }}>
+                <div>
+                  Trovato <strong>pettorale {highlight}</strong> con{" "}
+                  <strong>{highlighted.length} giri</strong>
+                </div>
+                <div className="pure-g">{highlighted}</div>
+              </div>
             ) : (
-              <span />
+              <div />
             )}
           </p>
         </div>
 
         <div className="float-container">
-          {categories.map(cat => (
-            <Column
-              key={cat}
-              category={cat}
-              onCategoryAddBib={bib => this.setState(categoryAddBib(cat, bib))}
-              onChangeBib={(lapNum0, index, bib) =>
-                this.setState(categoryChangeBib(cat, lapNum0, index, bib))
-              }
-              bibs={[].concat(this.state.bibs[cat], chronoByCat[cat])}
-            />
-          ))}
+          {categories
+            .filter(cat => shouldShowCategoryRanking(this.state, cat))
+            .map(cat => (
+              <Column
+                key={cat}
+                category={cat}
+                onCategoryAddBib={bib =>
+                  this.setState(categoryAddBib(cat, bib))
+                }
+                onChangeBib={(lapNum0, index, bib) =>
+                  this.setState(categoryChangeBib(cat, lapNum0, index, bib))
+                }
+                bibs={[].concat(this.state.bibs[cat], chronoByCat[cat])}
+                lastInsertedBib={this.state.lastBib}
+                showCategoryRankingFromLapNum={
+                  this.state.showCategoryRankingFromLapNum || Infinity
+                }
+              />
+            ))}
         </div>
 
-        <h2>Configurazione</h2>
-        <p>
-          Prima di iniziare la gara, crea oppure importa le categorie da Excel
-          seguendo le istruzioni qui sotto.
-        </p>
+        {this.state.showConfig && (
+          <div className="categories-input pure-g">
+            <div className="pure-u-1-3">
+              <h3>Crea categorie</h3>
+              (una per riga; altre colonne indicano la griglia)
+              <br />
+              <textarea
+                className="categories-input"
+                defaultValue={Object.keys(this.state.bibs).join("\n")}
+                ref={el => (this._catsList = el)}
+              />
+              <button type="submit" onClick={this.handleSetCategories}>
+                Aggiorna categorie
+              </button>
+            </div>
 
-        <div className="categories-input pure-g">
-          <div className="pure-u-1-3">
-            <h3>Crea categorie</h3>
-            (una per riga; altre colonne indicano la griglia)
-            <br />
-            <textarea
-              className="categories-input"
-              defaultValue={Object.keys(this.state.bibs).join("\n")}
-              ref={el => (this._catsList = el)}
-            />
-            <button type="submit" onClick={this.handleSetCategories}>
-              Aggiorna categorie
-            </button>
-          </div>
+            <div className="pure-u-1-3">
+              <h3>Importa categorie</h3>
+              (incolla un Excel: un concorrente per riga, nella prima colonna il
+              pettorale, nella seconda la categoria; la prima riga viene saltata
+              se non inizia con un pettorale)
+              <br />
+              <textarea
+                className="categories-input"
+                defaultValue=""
+                ref={el => (this._catsListConc = el)}
+              />
+              <button type="submit" onClick={this.handleSetCategoriesFromList}>
+                Importa categorie
+              </button>
+            </div>
 
-          <div className="pure-u-1-3">
-            <h3>Importa categorie</h3>
-            (incolla un Excel: un concorrente per riga, nella prima colonna il
-            pettorale, nella seconda la categoria; la prima riga viene saltata
-            se non inizia con un pettorale)
-            <br />
-            <textarea
-              className="categories-input"
-              defaultValue=""
-              ref={el => (this._catsListConc = el)}
-            />
-            <button type="submit" onClick={this.handleSetCategoriesFromList}>
-              Importa categorie
-            </button>
+            <div className="pure-u-1-3">
+              <h3>Gestione gara</h3>
+              <p>Contagiri versione: 2018-04-16</p>
+              <strong>Scarica:</strong>
+              <br />
+              <button type="submit" onClick={this.handleBackupDownload}>
+                Download backup (JSON)
+              </button>
+              <br />
+              <button
+                type="submit"
+                onClick={this.handleClassifyDownload}
+                style={{ color: "blue" }}
+              >
+                Download CSV-;
+              </button>
+              <br />
+              <br />
+              <strong>Carica backup (JSON):</strong>
+              <br />
+              <input type="file" onChange={this.handleBackupUpload} />
+              <br />
+              <br />
+              <br />
+              <br />
+              <strong>Area pericolosa:</strong> <br />
+              <button
+                type="reset"
+                onClick={e => {
+                  this.handleBackupDownload(e);
+                  resetAll();
+                }}
+              >
+                Cancella dati
+              </button>
+              <br />
+              <button
+                type="reset"
+                onClick={e => {
+                  this.handleBackupDownload(e);
+                  doubleConfirm(() => this.setState(resetCrono));
+                }}
+              >
+                Cancella cronologico e tempi
+              </button>
+            </div>
           </div>
-
-          <div className="pure-u-1-3">
-            <h3>Gestione gara</h3>
-            <p>Contagiri versione: 2018-04-16</p>
-            <strong>Scarica:</strong>
-            <br />
-            <button type="submit" onClick={this.handleBackupDownload}>
-              Download backup (JSON)
-            </button>
-            <br />
-            <button
-              type="submit"
-              onClick={this.handleClassifyDownload}
-              style={{ color: "blue" }}
-            >
-              Download CSV-;
-            </button>
-            <br />
-            <br />
-            <strong>Carica backup (JSON):</strong>
-            <br />
-            <input type="file" onChange={this.handleBackupUpload} />
-            <br />
-            <br />
-            <br />
-            <br />
-            <strong>Area pericolosa:</strong> <br />
-            <button
-              type="reset"
-              onClick={e => {
-                this.handleBackupDownload(e);
-                resetAll();
-              }}
-            >
-              Cancella dati
-            </button>
-            <br />
-            <button
-              type="reset"
-              onClick={e => {
-                this.handleBackupDownload(e);
-                doubleConfirm(() => this.setState(resetCrono));
-              }}
-            >
-              Cancella cronologico e tempi
-            </button>
-          </div>
-        </div>
+        )}
       </div>
     );
   }

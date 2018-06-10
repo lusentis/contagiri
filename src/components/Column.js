@@ -30,6 +30,8 @@ export default function column({
   onCategoryAddBib,
   onChangeBib,
   bibs,
+  lastInsertedBib,
+  showCategoryRankingFromLapNum,
 }) {
   const handleCategoryAddBib = ({ prev = 0 }) => e => {
     if (e.nativeEvent.keyCode === 107) {
@@ -58,9 +60,17 @@ export default function column({
   let totalCount = laps[0] ? laps[0].length : 0;
   return (
     <div className="column">
-      <h3>Categoria: {category}</h3>
+      <h3>{category}</h3>
       {laps.map((lap, lapNum0) => {
         if (lapNum0 !== 0 && lap.length === 0) {
+          return false;
+        }
+        if (
+          lapNum0 !== 0 &&
+          lapNum0 <
+            laps.filter(l => l.length > 0).length -
+              showCategoryRankingFromLapNum
+        ) {
           return false;
         }
         let naCount = 0;
@@ -104,6 +114,13 @@ export default function column({
                           lapNum0 === 0
                             ? handleChangeBib(lapNum0, index)
                             : () => {}
+                        }
+                        style={
+                          lastInsertedBib === bib
+                            ? {
+                                backgroundColor: "yellow",
+                              }
+                            : {}
                         }
                       />
                     </td>
