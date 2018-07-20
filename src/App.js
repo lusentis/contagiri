@@ -837,11 +837,15 @@ class App extends Component {
                               {cellIndex * 10 + rowIndex + 1}
                             </em>{" "}
                             <strong
-                              onMouseOver={e =>
+                              onMouseOver={e => {
+                                if (!this.state.autoHighlightLastBib) {
+                                  this.setState(highlightBib()(this.state));
+                                  return;
+                                }
                                 this.setState(
                                   highlightBib(Number(cell[0]))(this.state)
-                                )
-                              }
+                                );
+                              }}
                               onClick={e =>
                                 this.setState(insertBibTime(cell[2]))
                               }
