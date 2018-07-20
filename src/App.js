@@ -356,7 +356,7 @@ class App extends Component {
     this._persistInterval = setInterval(this.persistState, 500);
     this._backupInterval = setInterval(
       this.handleBackupDownload,
-      2 * 60 * 1000
+      10 * 60 * 1000
     );
     this.scrollChrono();
   }
