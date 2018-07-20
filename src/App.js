@@ -340,6 +340,7 @@ class App extends Component {
     this.handleSetCategoriesFromList = this.handleSetCategoriesFromList.bind(
       this
     );
+    this.handleClearCategories = this.handleClearCategories.bind(this);
     this.handleBibEvent = this.handleBibEvent.bind(this);
     this.handleBackupDownload = this.handleBackupDownload.bind(this);
     this.handleBackupUpload = this.handleBackupUpload.bind(this);
@@ -470,9 +471,23 @@ class App extends Component {
     }
   }
 
+  handleClearCategories(e) {
+    e.preventDefault();
+    if (!confirm("Confermi di voler ELIMINARE le categorie?")) {
+      return;
+    }
+    this.setState(state => ({
+      bibs: {},
+    }));
+  }
+
   handleSetCategories(e) {
     e.preventDefault();
-    if (!confirm("Confermi di voler impostare le categorie?")) {
+    if (
+      !confirm(
+        "Le categorie precedenti verranno sovrascritte. Se vuoi cancellare alcune categorie, utilizza prima il pulsante Elimina. Confermi di voler impostare le categorie?"
+      )
+    ) {
       return;
     }
     const currentCats = Object.keys(this.state.bibs);
@@ -483,14 +498,13 @@ class App extends Component {
       if (!cat) {
         return;
       }
-      if (currentCats.indexOf(cat) === -1) {
-        this.setState(state => ({
-          bibs: {
-            ...state.bibs,
-            [cat]: [...bibs].map(b => Number(b)),
-          },
-        }));
-      }
+      const cleanCat = cat.trim().toUpperCase();
+      this.setState(state => ({
+        bibs: {
+          ...state.bibs,
+          [cleanCat]: [...bibs].map(b => Number(b)),
+        },
+      }));
     });
   }
 
@@ -935,23 +949,33 @@ class App extends Component {
           <div className="categories-input pure-g">
             <div className="pure-u-1-3">
               <h3>Crea categorie</h3>
-              (una per riga; altre colonne indicano la griglia)
+              (una per riga; altre colonne indicano la griglia; un concorrente
+              può essere presente in una sola categoria; inserire la categoria
+              ASSOLUTA, senza concorrenti, per generare anche la classifica
+              assoluta)
               <br />
               <textarea
                 className="categories-input"
-                defaultValue={Object.keys(this.state.bibs).join("\n")}
+                defaultValue={Object.keys(this.state.bibs)
+                  .map(cat => [cat, ...this.state.bibs[cat]].join("\t"))
+                  .join("\n")}
                 ref={el => (this._catsList = el)}
               />
               <button type="submit" onClick={this.handleSetCategories}>
                 Aggiorna categorie
               </button>
+              <button type="reset" onClick={this.handleClearCategories}>
+                Elimina tutte le categorie
+              </button>
             </div>
 
             <div className="pure-u-1-3">
-              <h3>Importa categorie</h3>
-              (incolla un Excel: un concorrente per riga, nella prima colonna il
-              pettorale, nella seconda la categoria; la prima riga viene saltata
-              se non inizia con un pettorale)
+              <h3>Genera griglia categorie</h3>
+              (incolla le celle di un file Excel: un concorrente per riga, nella
+              prima colonna il pettorale, nella seconda la categoria; la prima
+              riga viene saltata se non inizia con un pettorale; se vuoi
+              sostituire le categorie attualmente presenti, utilizza prima il
+              pulsante Elimina)
               <br />
               <textarea
                 className="categories-input"
@@ -959,7 +983,7 @@ class App extends Component {
                 ref={el => (this._catsListConc = el)}
               />
               <button type="submit" onClick={this.handleSetCategoriesFromList}>
-                Importa categorie
+                Genera categorie
               </button>
             </div>
 
