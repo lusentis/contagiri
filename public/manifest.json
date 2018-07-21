@@ -1,0 +1,9 @@
+{
+  "short_name": "Contagiri",
+  "name": "Contagiri",
+  "icons": [],
+  "start_url": "/index.html?source=pwa",
+  "background_color": "#cb0000",
+  "display": "standalone",
+  "theme_color": "#cb0000"
+}
