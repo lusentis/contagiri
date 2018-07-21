@@ -143,7 +143,7 @@ export default function column({
                 <td className="stats">
                   <em>
                     <span style={{ color: "green" }}>{lap.length}</span> /{" "}
-                    {totalCount}
+                    {totalCount} ({naCount} manc.)
                   </em>
                 </td>
               </tr>

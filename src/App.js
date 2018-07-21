@@ -1,3 +1,5 @@
+/* eslint-disable no-restricted-globals */
+
 import React, { Component } from "react";
 import { findDOMNode } from "react-dom";
 import merge from "lodash/merge";
@@ -490,7 +492,7 @@ class App extends Component {
     ) {
       return;
     }
-    const currentCats = Object.keys(this.state.bibs);
+    // const currentCats = Object.keys(this.state.bibs);
     const requestedCats = findDOMNode(this._catsList)
       .value.split("\n")
       .map(c => c.trim().split(/\t|\s{2,}/));
@@ -597,6 +599,7 @@ class App extends Component {
         ...tempi,
       ];
       rows.push(row);
+      return;
     });
 
     const str = rows.map(r => r.join(";")).join("\n");
