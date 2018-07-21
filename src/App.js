@@ -913,7 +913,7 @@ class App extends Component {
             </span>
             <br />
             {highlight ? (
-              <div style={{ color: "orange" }}>
+              <div style={{ color: "olive" }}>
                 <div>
                   Trovato <strong>pettorale {highlight}</strong> con{" "}
                   <strong>{highlighted.length} giri</strong>
