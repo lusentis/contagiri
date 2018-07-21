@@ -264,13 +264,18 @@ const insertBibTime = index => state => {
 
 const highlightBib = bib => state => {
   const highlight = bib;
-  const categoryFilter = findBibCategory(state.bibs, bib);
-  return {
+  const ret = {
     ...state,
     highlight,
     lastBib: highlight,
-    categoryFilter,
   };
+
+  if (!state.alwaysShowAllCategories) {
+    const categoryFilter = findBibCategory(state.bibs, bib);
+    ret.categoryFilter = categoryFilter;
+  }
+
+  return ret;
 };
 
 const formatTempo = memoize(t => moment(t).format("HH:mm:ss,SSS"));
