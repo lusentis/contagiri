@@ -492,7 +492,7 @@ class App extends Component {
     e.preventDefault();
     if (
       !confirm(
-        "Le categorie precedenti verranno sovrascritte. Se vuoi cancellare alcune categorie, utilizza prima il pulsante Elimina. Confermi di voler impostare le categorie?"
+        "Le categorie precedenti verranno sovrascritte. Se vuoi cancellare o rinominare alcune categorie, utilizza prima il pulsante Elimina tutte. Confermi di voler impostare le categorie?"
       )
     ) {
       return;
@@ -714,12 +714,6 @@ class App extends Component {
                 </button>
                 <button
                   type="reset"
-                  onClick={() => this.setState(e => ({ categoryFilter: null }))}
-                >
-                  Mostra tutte cat.
-                </button>
-                <button
-                  type="reset"
                   onClick={() =>
                     this.setState(e => ({
                       alwaysShowAllCategories: !this.state
@@ -733,6 +727,12 @@ class App extends Component {
                   }}
                 >
                   Selez. auto cat.
+                </button>
+                <button
+                  type="reset"
+                  onClick={() => this.setState(e => ({ categoryFilter: null }))}
+                >
+                  Mostra tutte cat.
                 </button>
 
                 <small>
