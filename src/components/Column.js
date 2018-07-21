@@ -73,13 +73,19 @@ export default function column({
         ) {
           return false;
         }
-        let naCount = 0;
+        // let naCount = 0;
         let lastBib = 0;
         return (
           <table key={lapNum0}>
             <thead>
               <tr>
-                <td>{lapNum0 === 0 ? "griglia" : "g" + lapNum0}</td>
+                <td>
+                  {category !== "ASSOLUTA"
+                    ? lapNum0 === 0
+                      ? "griglia"
+                      : "g" + lapNum0
+                    : "g" + (lapNum0 + 1)}
+                </td>
               </tr>
             </thead>
             <tbody>
@@ -90,7 +96,7 @@ export default function column({
                   Array.isArray(laps[lapNum0 + 1]) &&
                   laps[lapNum0 + 1].indexOf(bib) === -1
                 ) {
-                  naCount++;
+                  // naCount++;
                   className += "na";
                 }
                 if (!bib) {
@@ -99,7 +105,11 @@ export default function column({
                 lastBib = bib;
                 return (
                   <tr key={bib}>
-                    <td className={lapNum0 === 0 ? "first" : ""}>
+                    <td
+                      className={
+                        category !== "ASSOLUTA" && lapNum0 === 0 ? "first" : ""
+                      }
+                    >
                       <input
                         type="number"
                         className={className}
@@ -143,7 +153,7 @@ export default function column({
                 <td className="stats">
                   <em>
                     <span style={{ color: "green" }}>{lap.length}</span> /{" "}
-                    {totalCount} ({naCount} manc.)
+                    {totalCount}
                   </em>
                 </td>
               </tr>
