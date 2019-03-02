@@ -356,6 +356,9 @@ class App extends Component {
   }
 
   scrollChrono() {
+    if (!this.scrollingArea) {
+      return;
+    }
     findDOMNode(this.scrollingArea).scrollLeft =
       Number.MAX_SAFE_INTEGER - Math.random();
   }
@@ -632,7 +635,7 @@ class App extends Component {
           return false;
         }
 
-        const tempo = this.state.tempi[i - 1];
+        const tempo = this.state.tempi[i];
 
         const posDiff = i + 1 - lastPos;
         const timeDiff = tempo - lastTime - 60 * 60 * 1000; // @BUG no idea why here we have 1h offset...
